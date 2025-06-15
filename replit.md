@@ -88,6 +88,9 @@ The application follows a Model-View architecture pattern:
 ```
 Changelog:
 - June 15, 2025. Initial setup
+- June 15, 2025. Enhanced CBDC substitution analysis with dynamic time-series visualizations
+- June 15, 2025. Fixed Mesa 3.2.0 compatibility issues and agent initialization
+- June 15, 2025. Improved deposit substitution tracking and market share calculations
 ```
 
 ## User Preferences

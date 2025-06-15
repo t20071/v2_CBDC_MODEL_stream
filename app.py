@@ -93,7 +93,12 @@ def display_results():
         st.metric("Final CBDC Adoption", f"{final_cbdc_adoption:.1f}%")
     
     with col2:
-        deposit_reduction = (1 - data['Total_Bank_Deposits'].iloc[-1] / data['Total_Bank_Deposits'].iloc[0]) * 100
+        initial_deposits = data['Total_Bank_Deposits'].iloc[0]
+        final_deposits = data['Total_Bank_Deposits'].iloc[-1]
+        if initial_deposits > 0:
+            deposit_reduction = (1 - final_deposits / initial_deposits) * 100
+        else:
+            deposit_reduction = 0
         st.metric("Deposit Reduction", f"{deposit_reduction:.1f}%")
     
     with col3:
@@ -174,26 +179,64 @@ def display_results():
         st.subheader("CBDC Substitution Effects")
         
         # Calculate substitution metrics
-        data['Deposit_Substitution_Rate'] = (data['Total_Bank_Deposits'].iloc[0] - data['Total_Bank_Deposits']) / data['Total_Bank_Deposits'].iloc[0] * 100
-        data['CBDC_Growth_Rate'] = data['Total_CBDC_Holdings'].pct_change() * 100
+        initial_deposits = data['Total_Bank_Deposits'].iloc[0]
+        if initial_deposits > 0:
+            data['Deposit_Substitution_Rate'] = (initial_deposits - data['Total_Bank_Deposits']) / initial_deposits * 100
+        else:
+            data['Deposit_Substitution_Rate'] = 0
         
-        fig_sub = make_subplots(rows=2, cols=1, 
-                               subplot_titles=('Deposit Substitution Over Time', 'CBDC Growth Rate'))
+        # Calculate CBDC growth rate and cumulative substitution
+        data['CBDC_Growth_Rate'] = data['Total_CBDC_Holdings'].pct_change().fillna(0) * 100
+        data['Cumulative_CBDC_Share'] = data['Total_CBDC_Holdings'] / (data['Total_CBDC_Holdings'] + data['Total_Bank_Deposits']) * 100
         
+        fig_sub = make_subplots(rows=3, cols=1, 
+                               subplot_titles=('Deposit Substitution Over Time (%)', 
+                                             'CBDC Market Share Growth (%)',
+                                             'Absolute Values: CBDC vs Bank Deposits'))
+        
+        # Deposit substitution rate over time
         fig_sub.add_trace(
             go.Scatter(x=data.index, y=data['Deposit_Substitution_Rate'],
-                      name='Deposit Substitution Rate (%)', fill='tonexty'),
+                      name='Deposit Substitution Rate (%)', 
+                      line=dict(color='red', width=3),
+                      fill='tonexty'),
             row=1, col=1
         )
         
+        # CBDC market share over time
         fig_sub.add_trace(
-            go.Scatter(x=data.index, y=data['CBDC_Growth_Rate'].rolling(5).mean(),
-                      name='CBDC Growth Rate (5-period MA)', line=dict(color='green')),
+            go.Scatter(x=data.index, y=data['Cumulative_CBDC_Share'],
+                      name='CBDC Market Share (%)', 
+                      line=dict(color='blue', width=3)),
             row=2, col=1
         )
         
-        fig_sub.update_layout(height=600, title_text="CBDC Substitution Analysis")
+        # Absolute values comparison
+        fig_sub.add_trace(
+            go.Scatter(x=data.index, y=data['Total_Bank_Deposits'],
+                      name='Bank Deposits', line=dict(color='orange')),
+            row=3, col=1
+        )
+        fig_sub.add_trace(
+            go.Scatter(x=data.index, y=data['Total_CBDC_Holdings'],
+                      name='CBDC Holdings', line=dict(color='green')),
+            row=3, col=1
+        )
+        
+        fig_sub.update_layout(height=800, title_text="CBDC Substitution Analysis Over Time")
         st.plotly_chart(fig_sub, use_container_width=True)
+        
+        # Key insights
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            max_substitution = data['Deposit_Substitution_Rate'].max()
+            st.metric("Peak Substitution Rate", f"{max_substitution:.1f}%")
+        with col2:
+            final_cbdc_share = data['Cumulative_CBDC_Share'].iloc[-1]
+            st.metric("Final CBDC Market Share", f"{final_cbdc_share:.1f}%")
+        with col3:
+            cbdc_introduction = params['cbdc_introduction_step']
+            st.metric("CBDC Introduction Step", cbdc_introduction)
     
     with tab2:
         st.subheader("Commercial Banking Impact")
