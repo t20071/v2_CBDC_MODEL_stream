@@ -12,11 +12,10 @@ class Consumer(Agent):
     
     def __init__(self, unique_id, model, initial_wealth=5000, 
                  cbdc_adoption_probability=0.03, risk_aversion=0.5):
-        super().__init__()
+        super().__init__(model)
         
         # Store agent properties
         self.unique_id = unique_id
-        self.model = model
         
         # Consumer characteristics
         self.initial_wealth = initial_wealth

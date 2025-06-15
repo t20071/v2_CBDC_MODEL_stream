@@ -11,11 +11,10 @@ class CommercialBank(Agent):
     
     def __init__(self, unique_id, model, interest_rate=0.02, lending_rate=0.05, 
                  initial_capital=50000, reserve_requirement=0.1):
-        super().__init__()
+        super().__init__(model)
         
         # Store agent properties
         self.unique_id = unique_id
-        self.model = model
         
         # Bank characteristics
         self.interest_rate = interest_rate  # Rate paid on deposits
