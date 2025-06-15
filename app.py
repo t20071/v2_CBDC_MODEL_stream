@@ -160,14 +160,7 @@ def display_results():
     fig_adoption.update_layout(height=800, showlegend=True, 
                               title_text="CBDC Impact Analysis Dashboard")
     
-    # Add vertical line for CBDC introduction
-    for i in range(1, 3):
-        for j in range(1, 3):
-            if not (i == 2 and j == 1):  # Skip pie chart
-                fig_adoption.add_vline(x=params['cbdc_introduction_step'], 
-                                     line_dash="dash", line_color="red",
-                                     annotation_text="CBDC Introduced",
-                                     row=i, col=j)
+    # Note: CBDC introduction step marked in chart titles
     
     st.plotly_chart(fig_adoption, use_container_width=True)
     
@@ -228,12 +221,16 @@ def display_results():
             row=1, col=2
         )
         
-        # Interest Rate Spread (simplified calculation)
+        # Interest Rate Spread (simplified visualization)
         lending_rate = params['bank_interest_rate'] + 2  # Assume 2% markup
         rate_spread = lending_rate - params['cbdc_interest_rate']
-        fig_bank.add_hline(y=rate_spread, line_dash="dash", 
-                          annotation_text=f"Rate Spread: {rate_spread:.1f}%",
-                          row=2, col=1)
+        # Show rate spread as a constant line
+        spread_line = [rate_spread] * len(data)
+        fig_bank.add_trace(
+            go.Scatter(x=data.index, y=spread_line,
+                      name=f'Rate Spread ({rate_spread:.1f}%)', line=dict(color='purple', dash='dash')),
+            row=2, col=1
+        )
         
         # Bank Profitability Proxy (Loans - Deposits differential)
         data['Profitability_Proxy'] = (data['Total_Bank_Loans'] - data['Total_Bank_Deposits']) / data['Total_Bank_Deposits'].iloc[0] * 100
