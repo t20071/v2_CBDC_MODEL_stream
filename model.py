@@ -53,18 +53,41 @@ class CBDCBankingModel(Model):
         self.all_agents.append(central_bank)
         self.central_bank = central_bank
         
-        # Create Commercial Banks
+        # Create Commercial Banks with different sizes (H1, H2)
         self.commercial_banks = []
+        self.large_banks = []
+        self.small_medium_banks = []
+        
+        total_market_capital = initial_consumer_wealth * n_consumers * 0.8
+        
         for i in range(1, n_commercial_banks + 1):
+            # Create bank size distribution: 20% large banks, 80% small-medium banks
+            if i <= max(1, int(n_commercial_banks * 0.2)):  # Large banks (top 20%)
+                bank_type = "large"
+                initial_capital = int(total_market_capital * 0.6 / max(1, int(n_commercial_banks * 0.2)))  # 60% of market
+                network_centrality = 0.8  # High initial centrality
+            else:  # Small-medium banks
+                bank_type = "small_medium"
+                remaining_banks = n_commercial_banks - max(1, int(n_commercial_banks * 0.2))
+                initial_capital = int(total_market_capital * 0.4 / max(1, remaining_banks))  # 40% of market
+                network_centrality = 0.3  # Lower initial centrality
+            
             bank = CommercialBank(
                 unique_id=i,
                 model=self,
                 interest_rate=self.bank_interest_rate,
-                lending_rate=self.bank_interest_rate + 0.03,  # 3% markup
-                initial_capital=int(initial_consumer_wealth * n_consumers * 0.1)  # 10% of total consumer wealth
+                lending_rate=self.bank_interest_rate + 0.03,
+                initial_capital=initial_capital,
+                bank_type=bank_type,
+                network_centrality=network_centrality
             )
             self.all_agents.append(bank)
             self.commercial_banks.append(bank)
+            
+            if bank_type == "large":
+                self.large_banks.append(bank)
+            else:
+                self.small_medium_banks.append(bank)
         
         # Create Consumers
         self.consumers = []
@@ -93,7 +116,17 @@ class CBDCBankingModel(Model):
                 "Total_Bank_Loans": self.compute_total_bank_loans,
                 "CBDC_Adopters": self.compute_cbdc_adopters,
                 "Average_Bank_Liquidity_Ratio": self.compute_average_bank_liquidity,
-                "Step": lambda m: m.current_step
+                "Step": lambda m: m.current_step,
+                # H1: Network centrality metrics
+                "Average_Bank_Centrality": self.compute_average_bank_centrality,
+                "Small_Bank_Centrality": self.compute_small_bank_centrality,
+                "Large_Bank_Centrality": self.compute_large_bank_centrality,
+                # H3: Systemic risk metrics
+                "Average_Liquidity_Stress": self.compute_average_liquidity_stress,
+                # H4: Network connectivity
+                "Banking_Network_Density": self.compute_network_density,
+                # H6: Central bank centrality
+                "Central_Bank_Centrality": self.compute_central_bank_centrality
             },
             agent_reporters={
                 "AgentID": lambda a: f"{type(a).__name__}_{a.unique_id}",

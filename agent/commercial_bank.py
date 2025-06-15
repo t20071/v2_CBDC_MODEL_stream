@@ -10,7 +10,8 @@ class CommercialBank(Agent):
     """
     
     def __init__(self, unique_id, model, interest_rate=0.02, lending_rate=0.05, 
-                 initial_capital=50000, reserve_requirement=0.1):
+                 initial_capital=50000, reserve_requirement=0.1, bank_type="small_medium", 
+                 network_centrality=0.3):
         super().__init__(model)
         
         # Store agent properties
@@ -21,6 +22,8 @@ class CommercialBank(Agent):
         self.lending_rate = lending_rate    # Rate charged on loans
         self.initial_capital = initial_capital
         self.reserve_requirement = reserve_requirement
+        self.bank_type = bank_type  # "large" or "small_medium"
+        self.network_centrality = network_centrality  # H1: Network centrality metric
         
         # Bank balance sheet
         self.capital = initial_capital
@@ -37,6 +40,20 @@ class CommercialBank(Agent):
         # Market position
         self.market_share = 0.0
         self.customer_retention_rate = 1.0
+        
+        # Network and systemic risk metrics (H1, H3, H4, H5)
+        self.interbank_connections = 0  # Number of interbank relationships
+        self.systemic_importance = 0.0  # Systemic importance score
+        self.liquidity_stress_level = 0.0  # H3: Liquidity stress indicator
+        self.cbdc_impact_factor = 1.0  # How much CBDC affects this bank
+        
+        # H2: Small bank specific vulnerabilities
+        if self.bank_type == "small_medium":
+            self.cbdc_vulnerability = 0.8  # Higher vulnerability to CBDC
+            self.customer_stickiness = 0.3  # Lower customer loyalty
+        else:
+            self.cbdc_vulnerability = 0.4  # Lower vulnerability to CBDC
+            self.customer_stickiness = 0.7  # Higher customer loyalty
     
     def step(self):
         """Execute one step of bank operations."""
@@ -54,6 +71,12 @@ class CommercialBank(Agent):
         
         # Handle customer attrition due to CBDC
         self.handle_customer_attrition()
+        
+        # Update network centrality and systemic metrics (H1, H4, H5)
+        self.update_network_metrics()
+        
+        # Calculate liquidity stress (H3)
+        self.calculate_liquidity_stress()
     
     def add_customer(self, consumer):
         """Add a new customer to the bank."""
@@ -158,6 +181,38 @@ class CommercialBank(Agent):
                 retained_customers = len(self.customers) - len(customers_to_remove)
                 self.customer_retention_rate = retained_customers / len(self.customers)
     
+    def update_network_metrics(self):
+        """Update network centrality and connectivity metrics (H1, H4)."""
+        if self.model.cbdc_introduced:
+            # H1: CBDC reduces network centrality, especially for small banks
+            cbdc_adoption_rate = self.model.compute_cbdc_adoption_rate()
+            centrality_decay = cbdc_adoption_rate * self.cbdc_vulnerability
+            
+            # Small banks lose centrality faster
+            if self.bank_type == "small_medium":
+                centrality_decay *= 1.5  # 50% faster decline for small banks
+            
+            self.network_centrality = max(0.1, self.network_centrality - centrality_decay * 0.02)
+            
+            # H4: Reduce interbank connections as CBDC provides alternative
+            if cbdc_adoption_rate > 0.3:  # When CBDC adoption exceeds 30%
+                connection_loss = (cbdc_adoption_rate - 0.3) * 0.1
+                self.interbank_connections = max(0, self.interbank_connections - connection_loss)
+    
+    def calculate_liquidity_stress(self):
+        """Calculate liquidity stress level (H3)."""
+        if self.model.cbdc_introduced:
+            # H3: Rapid CBDC adoption creates liquidity stress
+            cbdc_adoption_rate = self.model.compute_cbdc_adoption_rate()
+            deposit_outflow_rate = min(0.8, cbdc_adoption_rate * self.cbdc_vulnerability)
+            
+            # Liquidity stress increases with deposit outflows
+            self.liquidity_stress_level = deposit_outflow_rate * (1 - self.liquidity_ratio)
+            
+            # Small banks experience higher stress
+            if self.bank_type == "small_medium" and self.liquidity_stress_level > 0.6:
+                self.liquidity_stress_level *= 1.3  # 30% higher stress
+    
     def get_financial_strength(self):
         """Calculate overall financial strength score."""
         # Weighted score based on key metrics
@@ -165,11 +220,17 @@ class CommercialBank(Agent):
         profitability_score = max(0, min(self.profitability / 1000, 1.0))  # Normalize profitability
         market_share_score = self.market_share
         
-        # Weighted average
+        # H5: Include network centrality and systemic risk in strength calculation
+        centrality_score = self.network_centrality
+        stress_penalty = max(0, 1 - self.liquidity_stress_level)
+        
+        # Weighted average including network effects
         strength_score = (
-            liquidity_score * 0.4 +
-            profitability_score * 0.4 +
-            market_share_score * 0.2
+            liquidity_score * 0.3 +
+            profitability_score * 0.3 +
+            market_share_score * 0.2 +
+            centrality_score * 0.1 +
+            stress_penalty * 0.1
         )
         
         return strength_score
