@@ -56,7 +56,8 @@ def main():
             
             # Store results in session state
             st.session_state['simulation_data'] = model.datacollector.get_model_vars_dataframe()
-            st.session_state['agent_data'] = model.datacollector.get_agent_vars_dataframe()
+            # Skip agent data for now due to collection issues
+            st.session_state['agent_data'] = None
             st.session_state['model_params'] = {
                 'n_consumers': n_consumers,
                 'n_commercial_banks': n_commercial_banks,
@@ -259,7 +260,7 @@ def display_results():
         st.plotly_chart(fig_market, use_container_width=True)
         
         # Consumer behavior analysis
-        if len(agent_data) > 0:
+        if agent_data is not None and len(agent_data) > 0:
             consumer_data = agent_data[agent_data['AgentID'].str.startswith('Consumer')]
             if len(consumer_data) > 0:
                 final_step_data = consumer_data[consumer_data['Step'] == consumer_data['Step'].max()]
@@ -268,6 +269,8 @@ def display_results():
                                           color='CBDC_Adopter', nbins=20,
                                           title='Consumer Wealth Distribution by CBDC Adoption Status')
                 st.plotly_chart(fig_consumer, use_container_width=True)
+        else:
+            st.info("Agent-level data analysis is currently unavailable. The model-level metrics above show the key CBDC substitution effects.")
     
     # Data Export Section
     st.header("💾 Data Export")
@@ -288,7 +291,7 @@ def display_results():
             )
     
     with col2:
-        if len(agent_data) > 0 and st.button("Download Agent Data as CSV"):
+        if agent_data is not None and len(agent_data) > 0 and st.button("Download Agent Data as CSV"):
             csv_buffer = io.StringIO()
             agent_data.to_csv(csv_buffer, index=True)
             csv_string = csv_buffer.getvalue()
@@ -299,6 +302,8 @@ def display_results():
                 file_name=f"cbdc_simulation_agent_data_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv"
             )
+        else:
+            st.info("Agent data download currently unavailable")
     
     # Parameter Summary
     with st.expander("📋 Simulation Parameters Used"):
