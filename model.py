@@ -1,7 +1,6 @@
-from mesa import Model
-from mesa.time import RandomActivation
-from mesa.space import NetworkGrid
+from mesa import Model, Agent
 from mesa.datacollection import DataCollector
+import networkx as nx
 import networkx as nx
 import numpy as np
 from agent.commercial_bank import CommercialBank
