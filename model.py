@@ -1,7 +1,7 @@
 from mesa import Model, Agent
 from mesa.datacollection import DataCollector
 import networkx as nx
-import networkx as nx
+import random
 import numpy as np
 from agent.commercial_bank import CommercialBank
 from agent.central_bank import CentralBank
@@ -40,10 +40,9 @@ class CBDCBankingModel(Model):
         
         # Create network topology
         self.G = nx.erdos_renyi_graph(n_consumers + n_commercial_banks + 1, 0.1)
-        self.grid = NetworkGrid(self.G)
         
-        # Create scheduler
-        self.schedule = RandomActivation(self)
+        # Create simple agent list for scheduling
+        self.all_agents = []
         
         # Create Central Bank (unique agent)
         central_bank = CentralBank(
@@ -51,8 +50,7 @@ class CBDCBankingModel(Model):
             model=self,
             cbdc_interest_rate=self.cbdc_interest_rate
         )
-        self.schedule.add(central_bank)
-        self.grid.place_agent(central_bank, 0)
+        self.all_agents.append(central_bank)
         self.central_bank = central_bank
         
         # Create Commercial Banks
@@ -63,10 +61,9 @@ class CBDCBankingModel(Model):
                 model=self,
                 interest_rate=self.bank_interest_rate,
                 lending_rate=self.bank_interest_rate + 0.03,  # 3% markup
-                initial_capital=initial_consumer_wealth * n_consumers * 0.1  # 10% of total consumer wealth
+                initial_capital=int(initial_consumer_wealth * n_consumers * 0.1)  # 10% of total consumer wealth
             )
-            self.schedule.add(bank)
-            self.grid.place_agent(bank, i)
+            self.agents.append(bank)
             self.commercial_banks.append(bank)
         
         # Create Consumers
@@ -79,12 +76,11 @@ class CBDCBankingModel(Model):
                 cbdc_adoption_probability=self.cbdc_adoption_rate,
                 risk_aversion=np.random.normal(0.5, 0.2)  # Risk aversion varies among consumers
             )
-            self.schedule.add(consumer)
-            self.grid.place_agent(consumer, i)
+            self.agents.append(consumer)
             self.consumers.append(consumer)
             
             # Initially assign consumers to banks randomly
-            chosen_bank = self.random.choice(self.commercial_banks)
+            chosen_bank = np.random.choice(self.commercial_banks)
             consumer.primary_bank = chosen_bank
             chosen_bank.add_customer(consumer)
         
@@ -132,7 +128,8 @@ class CBDCBankingModel(Model):
             self.central_bank.cbdc_attractiveness = self.cbdc_attractiveness * network_effect
         
         # Execute agent steps
-        self.schedule.step()
+        for agent in self.agents:
+            agent.step()
         
         # Market dynamics: banks adjust interest rates based on deposit outflows
         self.adjust_market_conditions()
