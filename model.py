@@ -89,6 +89,9 @@ class CBDCBankingModel(Model):
             else:
                 self.small_medium_banks.append(bank)
         
+        # Initialize interbank network connections (H4)
+        self.initialize_banking_network()
+        
         # Create Consumers
         self.consumers = []
         for i in range(n_commercial_banks + 1, n_commercial_banks + n_consumers + 1):
@@ -219,6 +222,77 @@ class CBDCBankingModel(Model):
         
         total_liquidity = sum(bank.liquidity_ratio for bank in self.commercial_banks)
         return total_liquidity / len(self.commercial_banks)
+    
+    # H1: Network centrality computation methods
+    def compute_average_bank_centrality(self):
+        """Compute average network centrality across all commercial banks."""
+        if not self.commercial_banks:
+            return 0.0
+        return sum(bank.network_centrality for bank in self.commercial_banks) / len(self.commercial_banks)
+    
+    def compute_small_bank_centrality(self):
+        """Compute average centrality for small and medium banks (H1)."""
+        small_banks = [bank for bank in self.commercial_banks if bank.bank_type == "small_medium"]
+        if not small_banks:
+            return 0.0
+        return sum(bank.network_centrality for bank in small_banks) / len(small_banks)
+    
+    def compute_large_bank_centrality(self):
+        """Compute average centrality for large banks (H1)."""
+        large_banks = [bank for bank in self.commercial_banks if bank.bank_type == "large"]
+        if not large_banks:
+            return 0.0
+        return sum(bank.network_centrality for bank in large_banks) / len(large_banks)
+    
+    # H3: Systemic risk computation
+    def compute_average_liquidity_stress(self):
+        """Compute average liquidity stress across banks (H3)."""
+        if not self.commercial_banks:
+            return 0.0
+        return sum(bank.liquidity_stress_level for bank in self.commercial_banks) / len(self.commercial_banks)
+    
+    # H4: Network connectivity computation
+    def compute_network_density(self):
+        """Compute banking network density (H4)."""
+        if len(self.commercial_banks) <= 1:
+            return 0.0
+        
+        # Calculate actual connections vs possible connections
+        total_connections = sum(bank.interbank_connections for bank in self.commercial_banks)
+        max_possible_connections = len(self.commercial_banks) * (len(self.commercial_banks) - 1)
+        
+        if max_possible_connections == 0:
+            return 0.0
+        return total_connections / max_possible_connections
+    
+    # H6: Central bank centrality computation
+    def compute_central_bank_centrality(self):
+        """Compute central bank's network centrality (H6)."""
+        if not self.cbdc_introduced:
+            return 0.1  # Minimal centrality before CBDC
+        
+        # Central bank centrality increases with CBDC adoption
+        cbdc_adoption = self.compute_cbdc_adoption_rate()
+        base_centrality = 0.1
+        cbdc_boost = cbdc_adoption * 0.8  # Up to 80% boost from CBDC
+        
+        return min(1.0, base_centrality + cbdc_boost)
+    
+    def initialize_banking_network(self):
+        """Initialize interbank network connections for H4 analysis."""
+        n_banks = len(self.commercial_banks)
+        if n_banks <= 1:
+            return
+        
+        # Create initial network connections based on bank size and proximity
+        for i, bank in enumerate(self.commercial_banks):
+            # Large banks have more connections
+            if bank.bank_type == "large":
+                target_connections = min(n_banks - 1, int(n_banks * 0.6))  # Connect to 60% of banks
+            else:
+                target_connections = min(n_banks - 1, int(n_banks * 0.3))  # Connect to 30% of banks
+            
+            bank.interbank_connections = target_connections
     
     def get_simulation_summary(self):
         """Get a summary of the simulation results."""

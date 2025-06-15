@@ -173,7 +173,10 @@ def display_results():
     st.header("📊 Detailed Time Series Analysis")
     
     # Create tabs for different analyses
-    tab1, tab2, tab3 = st.tabs(["Substitution Effects", "Banking Impact", "Market Dynamics"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "Substitution Effects", "Network Centrality (H1)", "Systemic Risk (H3)", 
+        "Network Connectivity (H4)", "Central Bank Dominance (H6)"
+    ])
     
     with tab1:
         st.subheader("CBDC Substitution Effects")
@@ -239,6 +242,167 @@ def display_results():
             st.metric("CBDC Introduction Step", cbdc_introduction)
     
     with tab2:
+        st.subheader("H1: Network Centrality Analysis")
+        st.write("Testing hypothesis: CBDC reduces centrality of commercial banks, especially small banks")
+        
+        # Network centrality comparison
+        fig_centrality = make_subplots(rows=2, cols=1,
+                                     subplot_titles=('Bank Centrality Over Time', 
+                                                   'Large vs Small Bank Centrality'))
+        
+        # Overall bank centrality trend
+        fig_centrality.add_trace(
+            go.Scatter(x=data.index, y=data['Average_Bank_Centrality'],
+                      name='Average Bank Centrality', line=dict(color='blue')),
+            row=1, col=1
+        )
+        
+        # Centrality comparison by bank size
+        fig_centrality.add_trace(
+            go.Scatter(x=data.index, y=data['Large_Bank_Centrality'],
+                      name='Large Banks', line=dict(color='green')),
+            row=2, col=1
+        )
+        fig_centrality.add_trace(
+            go.Scatter(x=data.index, y=data['Small_Bank_Centrality'],
+                      name='Small/Medium Banks', line=dict(color='red')),
+            row=2, col=1
+        )
+        
+        fig_centrality.update_layout(height=600, title_text="Network Centrality Impact Analysis")
+        st.plotly_chart(fig_centrality, use_container_width=True)
+        
+        # H1 Analysis metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            initial_avg_centrality = data['Average_Bank_Centrality'].iloc[0]
+            final_avg_centrality = data['Average_Bank_Centrality'].iloc[-1]
+            centrality_decline = ((initial_avg_centrality - final_avg_centrality) / initial_avg_centrality) * 100
+            st.metric("Overall Centrality Decline", f"{centrality_decline:.1f}%")
+        with col2:
+            small_bank_decline = ((data['Small_Bank_Centrality'].iloc[0] - data['Small_Bank_Centrality'].iloc[-1]) / data['Small_Bank_Centrality'].iloc[0]) * 100
+            st.metric("Small Bank Centrality Loss", f"{small_bank_decline:.1f}%")
+        with col3:
+            large_bank_decline = ((data['Large_Bank_Centrality'].iloc[0] - data['Large_Bank_Centrality'].iloc[-1]) / data['Large_Bank_Centrality'].iloc[0]) * 100
+            st.metric("Large Bank Centrality Loss", f"{large_bank_decline:.1f}%")
+    
+    with tab3:
+        st.subheader("H3: Systemic Liquidity Risk Analysis")
+        st.write("Testing hypothesis: CBDC increases liquidity risk during rapid adoption")
+        
+        # Liquidity stress analysis
+        fig_stress = make_subplots(rows=2, cols=1,
+                                 subplot_titles=('Liquidity Stress Over Time',
+                                               'CBDC Adoption vs Liquidity Stress'))
+        
+        # Liquidity stress trend
+        fig_stress.add_trace(
+            go.Scatter(x=data.index, y=data['Average_Liquidity_Stress'],
+                      name='Average Liquidity Stress', 
+                      line=dict(color='red', width=3),
+                      fill='tonexty'),
+            row=1, col=1
+        )
+        
+        # Correlation with CBDC adoption
+        fig_stress.add_trace(
+            go.Scatter(x=data['CBDC_Adoption_Rate'], y=data['Average_Liquidity_Stress'],
+                      mode='markers',
+                      name='Stress vs CBDC Adoption',
+                      marker=dict(color='orange', size=8)),
+            row=2, col=1
+        )
+        
+        fig_stress.update_layout(height=600, title_text="Systemic Liquidity Risk Analysis")
+        st.plotly_chart(fig_stress, use_container_width=True)
+        
+        # H3 Risk metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            max_stress = data['Average_Liquidity_Stress'].max()
+            st.metric("Peak Liquidity Stress", f"{max_stress:.2f}")
+        with col2:
+            stress_at_30_adoption = data[data['CBDC_Adoption_Rate'] >= 0.3]['Average_Liquidity_Stress'].mean() if len(data[data['CBDC_Adoption_Rate'] >= 0.3]) > 0 else 0
+            st.metric("Stress at 30% CBDC Adoption", f"{stress_at_30_adoption:.2f}")
+        with col3:
+            crisis_threshold = 0.7  # Define crisis threshold
+            crisis_periods = len(data[data['Average_Liquidity_Stress'] > crisis_threshold])
+            st.metric("High Stress Periods", crisis_periods)
+    
+    with tab4:
+        st.subheader("H4: Banking Network Connectivity")
+        st.write("Testing hypothesis: CBDC weakens interbank network connections")
+        
+        # Network density analysis
+        fig_network = go.Figure()
+        
+        fig_network.add_trace(
+            go.Scatter(x=data.index, y=data['Banking_Network_Density'],
+                      name='Network Density',
+                      line=dict(color='purple', width=3),
+                      fill='tonexty')
+        )
+        
+        fig_network.update_layout(
+            title="Banking Network Density Over Time",
+            xaxis_title="Simulation Step",
+            yaxis_title="Network Density",
+            height=400
+        )
+        st.plotly_chart(fig_network, use_container_width=True)
+        
+        # H4 Network metrics
+        col1, col2 = st.columns(2)
+        with col1:
+            initial_density = data['Banking_Network_Density'].iloc[0]
+            final_density = data['Banking_Network_Density'].iloc[-1]
+            density_decline = ((initial_density - final_density) / initial_density) * 100 if initial_density > 0 else 0
+            st.metric("Network Density Decline", f"{density_decline:.1f}%")
+        with col2:
+            avg_density_post_cbdc = data[data.index >= params['cbdc_introduction_step']]['Banking_Network_Density'].mean()
+            st.metric("Avg Density Post-CBDC", f"{avg_density_post_cbdc:.3f}")
+    
+    with tab5:
+        st.subheader("H6: Central Bank Network Dominance")
+        st.write("Testing hypothesis: Central bank becomes dominant network node with CBDC")
+        
+        # Central bank vs commercial bank centrality
+        fig_dominance = go.Figure()
+        
+        fig_dominance.add_trace(
+            go.Scatter(x=data.index, y=data['Central_Bank_Centrality'],
+                      name='Central Bank Centrality',
+                      line=dict(color='gold', width=4))
+        )
+        
+        fig_dominance.add_trace(
+            go.Scatter(x=data.index, y=data['Average_Bank_Centrality'],
+                      name='Average Commercial Bank Centrality',
+                      line=dict(color='blue', width=2))
+        )
+        
+        fig_dominance.update_layout(
+            title="Central Bank vs Commercial Bank Network Centrality",
+            xaxis_title="Simulation Step",
+            yaxis_title="Network Centrality",
+            height=400
+        )
+        st.plotly_chart(fig_dominance, use_container_width=True)
+        
+        # H6 Dominance metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            final_cb_centrality = data['Central_Bank_Centrality'].iloc[-1]
+            st.metric("Final Central Bank Centrality", f"{final_cb_centrality:.2f}")
+        with col2:
+            final_avg_bank_centrality = data['Average_Bank_Centrality'].iloc[-1]
+            st.metric("Final Avg Bank Centrality", f"{final_avg_bank_centrality:.2f}")
+        with col3:
+            dominance_ratio = final_cb_centrality / final_avg_bank_centrality if final_avg_bank_centrality > 0 else 0
+            st.metric("CB Dominance Ratio", f"{dominance_ratio:.1f}x")
+    
+    # Previous Banking Impact tab content (now hidden, but keeping structure)
+    with st.expander("Commercial Banking Details"):
         st.subheader("Commercial Banking Impact")
         
         fig_bank = make_subplots(rows=2, cols=2,

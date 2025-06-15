@@ -91,6 +91,9 @@ Changelog:
 - June 15, 2025. Enhanced CBDC substitution analysis with dynamic time-series visualizations
 - June 15, 2025. Fixed Mesa 3.2.0 compatibility issues and agent initialization
 - June 15, 2025. Improved deposit substitution tracking and market share calculations
+- June 15, 2025. Implemented network centrality analysis for 6 CBDC hypotheses testing
+- June 15, 2025. Added bank size differentiation (large vs small/medium) and systemic risk metrics
+- June 15, 2025. Created dedicated visualization tabs for H1, H3, H4, H6 hypothesis testing
 ```
 
 ## User Preferences
