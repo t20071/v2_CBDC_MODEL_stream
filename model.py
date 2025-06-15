@@ -63,7 +63,7 @@ class CBDCBankingModel(Model):
                 lending_rate=self.bank_interest_rate + 0.03,  # 3% markup
                 initial_capital=int(initial_consumer_wealth * n_consumers * 0.1)  # 10% of total consumer wealth
             )
-            self.agents.append(bank)
+            self.all_agents.append(bank)
             self.commercial_banks.append(bank)
         
         # Create Consumers
@@ -76,11 +76,11 @@ class CBDCBankingModel(Model):
                 cbdc_adoption_probability=self.cbdc_adoption_rate,
                 risk_aversion=np.random.normal(0.5, 0.2)  # Risk aversion varies among consumers
             )
-            self.agents.append(consumer)
+            self.all_agents.append(consumer)
             self.consumers.append(consumer)
             
             # Initially assign consumers to banks randomly
-            chosen_bank = np.random.choice(self.commercial_banks)
+            chosen_bank = random.choice(self.commercial_banks)
             consumer.primary_bank = chosen_bank
             chosen_bank.add_customer(consumer)
         
@@ -128,7 +128,7 @@ class CBDCBankingModel(Model):
             self.central_bank.cbdc_attractiveness = self.cbdc_attractiveness * network_effect
         
         # Execute agent steps
-        for agent in self.agents:
+        for agent in self.all_agents:
             agent.step()
         
         # Market dynamics: banks adjust interest rates based on deposit outflows
