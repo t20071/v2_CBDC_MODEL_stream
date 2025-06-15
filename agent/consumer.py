@@ -12,7 +12,11 @@ class Consumer(Agent):
     
     def __init__(self, unique_id, model, initial_wealth=5000, 
                  cbdc_adoption_probability=0.03, risk_aversion=0.5):
-        super().__init__(unique_id, model)
+        super().__init__()
+        
+        # Store agent properties
+        self.unique_id = unique_id
+        self.model = model
         
         # Consumer characteristics
         self.initial_wealth = initial_wealth
@@ -129,7 +133,7 @@ class Consumer(Agent):
         adoption_probability -= loyalty_penalty
         
         # Make adoption decision
-        if self.model.random.random() < adoption_probability:
+        if np.random.random() < adoption_probability:
             self.adopt_cbdc()
     
     def adopt_cbdc(self):
@@ -238,7 +242,7 @@ class Consumer(Agent):
             # If deposits become very low, might switch banks or reduce relationship
             if self.bank_deposits < self.initial_wealth * 0.1:  # Less than 10% of initial wealth
                 # Consider reducing bank relationship
-                if self.model.random.random() < 0.05:  # 5% chance per step
+                if np.random.random() < 0.05:  # 5% chance per step
                     self.bank_loyalty *= 0.9  # Reduce loyalty
             
             # Update bank about deposit changes

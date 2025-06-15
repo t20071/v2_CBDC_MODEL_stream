@@ -10,7 +10,11 @@ class CentralBank(Agent):
     """
     
     def __init__(self, unique_id, model, cbdc_interest_rate=0.01, initial_cbdc_supply=0):
-        super().__init__(unique_id, model)
+        super().__init__()
+        
+        # Store agent properties
+        self.unique_id = unique_id
+        self.model = model
         
         # CBDC parameters
         self.cbdc_interest_rate = cbdc_interest_rate

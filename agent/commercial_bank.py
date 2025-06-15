@@ -11,7 +11,11 @@ class CommercialBank(Agent):
     
     def __init__(self, unique_id, model, interest_rate=0.02, lending_rate=0.05, 
                  initial_capital=50000, reserve_requirement=0.1):
-        super().__init__(unique_id, model)
+        super().__init__()
+        
+        # Store agent properties
+        self.unique_id = unique_id
+        self.model = model
         
         # Bank characteristics
         self.interest_rate = interest_rate  # Rate paid on deposits
@@ -142,7 +146,7 @@ class CommercialBank(Agent):
             for customer in self.customers:
                 if hasattr(customer, 'cbdc_adopter') and customer.cbdc_adopter:
                     # CBDC adopters may reduce their bank relationship
-                    if self.model.random.random() < 0.1:  # 10% chance to leave completely
+                    if np.random.random() < 0.1:  # 10% chance to leave completely
                         customers_to_remove.append(customer)
                         customer.primary_bank = None
             
