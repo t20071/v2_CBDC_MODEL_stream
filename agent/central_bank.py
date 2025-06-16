@@ -40,8 +40,8 @@ class CentralBank(Agent):
             # Monitor CBDC adoption and impact
             self.monitor_cbdc_impact()
             
-            # Adjust CBDC policy if needed
-            self.adjust_cbdc_policy()
+            # Promote CBDC adoption continuously
+            self.promote_cbdc_adoption()
             
             # Monitor banking system stability
             self.monitor_banking_system()
@@ -121,24 +121,15 @@ class CentralBank(Agent):
         
         return concentration_risk
     
-    def adjust_cbdc_policy(self):
-        """Adjust CBDC policy based on system conditions."""
-        # If systemic risk is high, consider policy adjustments
-        if self.systemic_risk_level > 0.7:
-            # Reduce CBDC attractiveness to slow adoption
-            self.cbdc_attractiveness *= 0.95  # Gradual reduction
-            
-            # Potentially lower CBDC interest rate
-            if self.cbdc_interest_rate > 0.005:  # Don't go below 0.5%
-                self.cbdc_interest_rate *= 0.98
+    def promote_cbdc_adoption(self):
+        """Actively promote CBDC adoption through positive incentives."""
+        # Central bank's role is to encourage CBDC adoption, not constrain it
+        # Gradually increase CBDC attractiveness over time
+        self.cbdc_attractiveness *= 1.005  # Small consistent increase
         
-        elif self.systemic_risk_level < 0.3 and self.cbdc_adoption_rate < 0.2:
-            # Low risk and slow adoption - can increase attractiveness
-            self.cbdc_attractiveness *= 1.02
-            
-            # Potentially increase CBDC interest rate to encourage adoption
-            if self.cbdc_interest_rate < 0.03:  # Cap at 3%
-                self.cbdc_interest_rate *= 1.01
+        # Maintain competitive CBDC interest rate to encourage adoption
+        if self.cbdc_interest_rate < 0.025:  # Keep rates attractive
+            self.cbdc_interest_rate *= 1.002  # Gradual rate increases to stay competitive
     
     def monitor_banking_system(self):
         """Monitor the health of the commercial banking system."""
@@ -151,17 +142,17 @@ class CentralBank(Agent):
             if bank.liquidity_ratio < 0.05:  # Less than 5% liquidity
                 weak_banks += 1
         
-        # If too many banks are weak, consider intervention
+        # If too many banks are weak, provide support while continuing CBDC promotion
         if weak_banks / total_banks > 0.3:  # More than 30% of banks are weak
-            self.implement_emergency_measures()
+            self.support_banking_system()
     
-    def implement_emergency_measures(self):
-        """Implement emergency measures if banking system is under stress."""
+    def support_banking_system(self):
+        """Provide support to banking system while continuing CBDC promotion."""
         # Lower monetary policy rate to support banks
         self.monetary_policy_rate = max(0.001, self.monetary_policy_rate * 0.9)
         
-        # Reduce CBDC attractiveness temporarily
-        self.cbdc_attractiveness *= 0.9
+        # Continue promoting CBDC regardless of banking stress
+        # Central bank maintains its CBDC objectives
         
         # Provide liquidity support (simplified)
         for bank in self.model.commercial_banks:
@@ -178,15 +169,17 @@ class CentralBank(Agent):
             if hasattr(consumer, 'cbdc_holdings')
         )
     
-    def get_policy_effectiveness(self):
-        """Assess the effectiveness of CBDC policy."""
-        # Effectiveness based on achieving objectives without excessive systemic risk
-        adoption_score = min(1.0, self.cbdc_adoption_rate / 0.3)  # Target 30% adoption
-        stability_score = 1 - self.systemic_risk_level
-        
-        # Balanced score
-        effectiveness = (adoption_score + stability_score) / 2
-        return effectiveness
+    def get_cbdc_promotion_effectiveness(self):
+        """Assess how well CBDC promotion is working."""
+        # Simple effectiveness based on adoption growth
+        if self.cbdc_adoption_rate > 0.5:
+            return 1.0  # Excellent adoption
+        elif self.cbdc_adoption_rate > 0.3:
+            return 0.8  # Good adoption
+        elif self.cbdc_adoption_rate > 0.1:
+            return 0.6  # Moderate adoption
+        else:
+            return 0.4  # Slow adoption - need more promotion
     
     def get_cbdc_statistics(self):
         """Get comprehensive CBDC statistics."""
@@ -197,7 +190,7 @@ class CentralBank(Agent):
             'cbdc_interest_rate': self.cbdc_interest_rate,
             'banking_system_health': self.banking_system_health,
             'systemic_risk_level': self.systemic_risk_level,
-            'policy_effectiveness': self.get_policy_effectiveness()
+            'promotion_effectiveness': self.get_cbdc_promotion_effectiveness()
         }
     
     def __str__(self):
