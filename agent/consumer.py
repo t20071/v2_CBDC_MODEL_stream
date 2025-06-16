@@ -54,12 +54,16 @@ class Consumer(Agent):
         self.social_influence_weight = np.random.normal(0.3, 0.1)
         self.social_influence_weight = max(0.0, min(0.6, self.social_influence_weight))
         
-        # Economic behavior
-        self.spending_rate = np.random.normal(0.02, 0.005)  # Monthly spending rate
-        self.spending_rate = max(0.01, min(0.05, self.spending_rate))
+        # Economic activity parameters
+        self.income_rate = np.random.normal(0.02, 0.005)  # Monthly income growth
+        self.income_rate = max(0.01, min(0.05, self.income_rate))
         
-        self.income_rate = np.random.normal(0.015, 0.005)  # Monthly income rate
-        self.income_rate = max(0.01, min(0.03, self.income_rate))
+        self.spending_rate = np.random.normal(0.015, 0.005)  # Monthly spending rate
+        self.spending_rate = max(0.005, min(0.03, self.spending_rate))
+    
+    def get_model(self) -> 'CBDCBankingModel':
+        """Get model with proper typing"""
+        return cast('CBDCBankingModel', self.model)
     
     def step(self):
         """Execute one step of consumer behavior."""
@@ -124,10 +128,10 @@ class Consumer(Agent):
         social_influence = self.social_influence_weight * peer_adoption_rate
         
         # Time momentum - adoption accelerates over time
-        if hasattr(self.model, 'current_step') and hasattr(self.model, 'cbdc_introduction_step'):
-            steps_since_introduction = self.model.current_step - self.model.cbdc_introduction_step
-            momentum_factor = min(0.8, steps_since_introduction * 0.04)  # Builds momentum
-            social_influence *= (1 + momentum_factor)  # Amplifies social influence
+        model = self.get_model()
+        steps_since_introduction = model.current_step - model.cbdc_introduction_step
+        momentum_factor = min(0.8, steps_since_introduction * 0.04)  # Builds momentum
+        social_influence *= (1 + momentum_factor)  # Amplifies social influence
         
         adoption_probability += social_influence
         
