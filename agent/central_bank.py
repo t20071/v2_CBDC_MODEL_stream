@@ -9,25 +9,30 @@ class CentralBank(Agent):
     through interest rates and policy measures.
     """
     
-    def __init__(self, unique_id, model, cbdc_interest_rate=0.01, initial_cbdc_supply=0):
+    def __init__(self, unique_id, model, cbdc_interest_rate=0.0, initial_cbdc_supply=0):
         super().__init__(model)
         
         # Store agent properties
         self.unique_id = unique_id
         
-        # CBDC parameters
-        self.cbdc_interest_rate = cbdc_interest_rate
+        # CBDC parameters (0% interest as specified)
+        self.cbdc_interest_rate = cbdc_interest_rate  # 0% interest on CBDC
         self.cbdc_introduced = False
         self.cbdc_supply = initial_cbdc_supply
         self.cbdc_outstanding = 0  # Total CBDC held by consumers
         
-        # Policy tools
+        # CBDC transaction limits (Indian rupee equivalent in simulation units)
+        self.per_transaction_limit = 10000    # ₹10,000 per transaction
+        self.wallet_holding_limit = 100000    # ₹1,00,000 wallet limit
+        self.daily_transfer_limit = 50000     # ₹50,000 outward transfer (24h)
+        self.daily_redemption_limit = 100000  # ₹1,00,000 redemptions (24h)
+        self.monthly_p2p_limit = 100          # 100 P2P transactions per month
+        self.cooling_period_limit = 5000      # ₹5,000 in first 24 hours
+        
+        # Policy tools (no intervention approach)
         self.monetary_policy_rate = 0.02  # Base interest rate
         self.cbdc_attractiveness = 1.0    # Factor affecting CBDC adoption
-        
-        # Central bank objectives
-        self.financial_stability_target = 0.8  # Target stability index
-        self.inflation_target = 0.02          # 2% inflation target
+        self.intervention_disabled = True # No crisis management or liquidity support
         
         # Monitoring metrics
         self.banking_system_health = 1.0
@@ -35,18 +40,14 @@ class CentralBank(Agent):
         self.systemic_risk_level = 0.0
     
     def step(self):
-        """Execute one step of central bank operations."""
+        """Execute one step of central bank operations (no intervention approach)."""
+        # Introduce CBDC at the specified time - only action taken
+        if not self.cbdc_introduced and self.model.current_step >= self.model.cbdc_introduction_step:
+            self.introduce_cbdc()
+        
+        # Only monitor - no policy interventions or crisis management
         if self.cbdc_introduced:
-            # Monitor CBDC adoption and impact
-            self.monitor_cbdc_impact()
-            
-            # Adjust CBDC policy if needed
-            self.adjust_cbdc_policy()
-            
-            # Monitor banking system stability
-            self.monitor_banking_system()
-            
-            # Update CBDC outstanding
+            self.monitor_cbdc_impact()  # Monitoring only, no adjustments
             self.update_cbdc_outstanding()
     
     def introduce_cbdc(self):

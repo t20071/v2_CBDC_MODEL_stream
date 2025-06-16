@@ -23,15 +23,28 @@ class Consumer(Agent):
         self.risk_aversion = max(0.1, min(0.9, risk_aversion))  # Constrain between 0.1 and 0.9
         self.cbdc_adoption_probability = cbdc_adoption_probability
         
-        # Financial holdings
-        self.bank_deposits = initial_wealth  # Initially all wealth in bank
+        # Financial holdings (free choice between cash, deposits, CBDC)
+        self.cash_holdings = initial_wealth * 0.15  # Start with 15% cash
+        self.bank_deposits = initial_wealth * 0.85  # 85% in bank deposits
         self.cbdc_holdings = 0
-        self.cash_holdings = 0
         
-        # CBDC adoption status
+        # CBDC adoption status and transaction limits
         self.cbdc_adopter = False
         self.cbdc_available = False
         self.adoption_step = None
+        
+        # CBDC transaction tracking for limits compliance
+        self.daily_cbdc_transactions = 0
+        self.daily_transfer_amount = 0
+        self.daily_redemption_amount = 0
+        self.monthly_p2p_count = 0
+        self.cooling_period_amount = 0  # First 24 hours limit
+        self.last_reset_day = 0
+        
+        # Payment method preferences (evolve over time)
+        self.cash_preference = np.random.uniform(0.1, 0.3)    # 10-30% cash preference
+        self.deposit_preference = np.random.uniform(0.5, 0.8) # 50-80% deposit preference
+        self.cbdc_preference = 0.0  # Will develop after CBDC introduction
         
         # Banking relationship
         self.primary_bank = None
@@ -136,21 +149,36 @@ class Consumer(Agent):
             self.adopt_cbdc()
     
     def adopt_cbdc(self):
-        """Adopt CBDC and start using it."""
+        """Adopt CBDC and start using it with transaction limits compliance."""
         self.cbdc_adopter = True
         self.adoption_step = self.model.current_step
         
-        # Initial CBDC adoption - move some funds from bank to CBDC
-        initial_transfer_rate = 0.2 + (1 - self.bank_loyalty) * 0.3  # 20-50% initial transfer
-        transfer_amount = self.bank_deposits * initial_transfer_rate
+        # Calculate initial transfer respecting CBDC limits
+        desired_transfer = self.bank_deposits * (0.2 + (1 - self.bank_loyalty) * 0.3)  # 20-50%
         
+        # Apply CBDC wallet holding limit (₹1,00,000)
+        wallet_limit = 100000
+        transfer_amount = min(desired_transfer, wallet_limit)
+        
+        # Apply cooling period limit for first 24 hours (₹5,000)
+        if self.adoption_step == self.model.current_step:  # First day
+            cooling_limit = 5000
+            transfer_amount = min(transfer_amount, cooling_limit)
+            self.cooling_period_amount = transfer_amount
+        
+        # Execute transfer
         self.bank_deposits -= transfer_amount
         self.cbdc_holdings += transfer_amount
         
-        # Update bank's customer list if customer significantly reduces deposits
+        # Develop CBDC preference (starts low, may grow)
+        self.cbdc_preference = np.random.uniform(0.05, 0.25)  # 5-25% initial preference
+        
+        # Reset daily limits tracking
+        self.reset_daily_limits_if_needed()
+        
+        # Update bank relationship
         if self.primary_bank and transfer_amount > self.initial_wealth * 0.3:
-            # Significant deposit reduction might affect bank relationship
-            pass  # Bank will handle this in its own step method
+            pass  # Bank will handle significant deposit reduction
     
     def rebalance_portfolio(self):
         """Rebalance portfolio between bank deposits and CBDC."""
