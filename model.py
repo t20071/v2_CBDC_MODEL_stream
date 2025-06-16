@@ -20,7 +20,7 @@ class CBDCBankingModel(Model):
     def __init__(self, n_consumers=200, n_commercial_banks=8, 
                  cbdc_introduction_step=30, cbdc_adoption_rate=0.03,
                  cbdc_attractiveness=1.5, initial_consumer_wealth=5000,
-                 bank_interest_rate=0.02, cbdc_interest_rate=0.0):
+                 bank_interest_rate=0.02, cbdc_interest_rate=0.01):
         
         super().__init__()
         
@@ -134,16 +134,12 @@ class CBDCBankingModel(Model):
             agent_reporters={
                 "AgentID": lambda a: f"{type(a).__name__}_{a.unique_id}",
                 "Wealth": lambda a: getattr(a, 'wealth', 0),
-                "Cash_Holdings": lambda a: getattr(a, 'cash_holdings', 0),
                 "CBDC_Holdings": lambda a: getattr(a, 'cbdc_holdings', 0),
                 "Bank_Deposits": lambda a: getattr(a, 'bank_deposits', 0),
                 "CBDC_Adopter": lambda a: getattr(a, 'cbdc_adopter', False),
                 "Liquidity_Ratio": lambda a: getattr(a, 'liquidity_ratio', 0),
                 "Total_Deposits": lambda a: getattr(a, 'total_deposits', 0),
-                "Total_Loans": lambda a: getattr(a, 'total_loans', 0),
-                "Bank_Type": lambda a: getattr(a, 'bank_type', 'consumer'),
-                "Network_Centrality": lambda a: getattr(a, 'network_centrality', 0),
-                "Liquidity_Stress": lambda a: getattr(a, 'liquidity_stress_level', 0)
+                "Total_Loans": lambda a: getattr(a, 'total_loans', 0)
             }
         )
         

@@ -33,22 +33,7 @@ def main():
     # Economic parameters
     initial_consumer_wealth = st.sidebar.slider("Initial Consumer Wealth", 1000, 10000, 5000, 500)
     bank_interest_rate = st.sidebar.slider("Bank Interest Rate (%)", 0.5, 5.0, 2.0, 0.1) / 100
-    
-    # CBDC interest rate fixed at 0%
-    cbdc_interest_rate = 0.0
-    st.sidebar.write("**CBDC Interest Rate: 0.0%** (Fixed as specified)")
-    
-    # Display CBDC transaction limits
-    st.sidebar.subheader("CBDC Transaction Limits")
-    st.sidebar.write("• Per transaction: ₹10,000")
-    st.sidebar.write("• Wallet holding: ₹1,00,000") 
-    st.sidebar.write("• Daily transfers: ₹50,000")
-    st.sidebar.write("• Daily redemptions: ₹1,00,000")
-    st.sidebar.write("• Monthly P2P: 100 transactions")
-    st.sidebar.write("• Cooling period: ₹5,000")
-    
-    # No intervention notice
-    st.sidebar.info("🚫 **No Central Bank Intervention**: Free market operation only")
+    cbdc_interest_rate = st.sidebar.slider("CBDC Interest Rate (%)", 0.0, 3.0, 1.0, 0.1) / 100
     
     # Run simulation button
     if st.sidebar.button("Run Simulation", type="primary"):
