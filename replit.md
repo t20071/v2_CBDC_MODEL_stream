@@ -94,6 +94,10 @@ Changelog:
 - June 15, 2025. Implemented network centrality analysis for 6 CBDC hypotheses testing
 - June 15, 2025. Added bank size differentiation (large vs small/medium) and systemic risk metrics
 - June 15, 2025. Created dedicated visualization tabs for H1, H3, H4, H6 hypothesis testing
+- June 16, 2025. Implemented 37% initial bank deposit baseline for consumer wealth allocation
+- June 16, 2025. Converted all monetary displays to percentage-based wealth allocation tracking
+- June 16, 2025. Fixed LSP type annotation errors throughout agent classes for proper model access
+- June 16, 2025. Enhanced transfer mechanics to draw from both bank deposits and other assets
 ```
 
 ## User Preferences

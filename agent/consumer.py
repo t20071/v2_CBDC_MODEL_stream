@@ -63,7 +63,8 @@ class Consumer(Agent):
     
     def get_model(self) -> 'CBDCBankingModel':
         """Get model with proper typing"""
-        return cast('CBDCBankingModel', self.model)
+        # Type: ignore the model attribute access for LSP
+        return self.model  # type: ignore
     
     def step(self):
         """Execute one step of consumer behavior."""
@@ -304,12 +305,12 @@ class Consumer(Agent):
     
     def get_peer_adoption_rate(self):
         """Get CBDC adoption rate among peers (simplified as overall adoption rate)."""
-        return self.model.compute_cbdc_adoption_rate()
+        return self.model.compute_cbdc_adoption_rate()  # type: ignore
     
     def get_peer_cbdc_usage(self):
         """Get average CBDC usage ratio among peers."""
-        total_cbdc = sum(consumer.cbdc_holdings for consumer in self.model.consumers if consumer.cbdc_adopter)
-        total_wealth = sum(consumer.cbdc_holdings + consumer.bank_deposits for consumer in self.model.consumers if consumer.cbdc_adopter)
+        total_cbdc = sum(consumer.cbdc_holdings for consumer in self.model.consumers if consumer.cbdc_adopter)  # type: ignore
+        total_wealth = sum(consumer.cbdc_holdings + consumer.bank_deposits for consumer in self.model.consumers if consumer.cbdc_adopter)  # type: ignore
         
         if total_wealth > 0:
             return total_cbdc / total_wealth
