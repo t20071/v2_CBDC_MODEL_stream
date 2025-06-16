@@ -3,9 +3,16 @@ from mesa.datacollection import DataCollector
 import networkx as nx
 import random
 import numpy as np
-from agent.commercial_bank import CommercialBank
-from agent.central_bank import CentralBank
-from agent.consumer import Consumer
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from agent.commercial_bank import CommercialBank
+    from agent.central_bank import CentralBank
+    from agent.consumer import Consumer
+else:
+    from agent.commercial_bank import CommercialBank
+    from agent.central_bank import CentralBank
+    from agent.consumer import Consumer
 
 class CBDCBankingModel(Model):
     """
@@ -16,6 +23,18 @@ class CBDCBankingModel(Model):
     2. Commercial Banks - Accept deposits and provide loans
     3. Consumers - Make financial decisions between traditional banking and CBDC
     """
+    
+    # Type annotations for model attributes
+    consumers: List['Consumer']
+    commercial_banks: List['CommercialBank']
+    central_bank: 'CentralBank'
+    large_banks: List['CommercialBank']
+    small_medium_banks: List['CommercialBank']
+    all_agents: List[Agent]
+    datacollector: DataCollector
+    cbdc_introduced: bool
+    current_step: int
+    cbdc_introduction_step: int
     
     def __init__(self, n_consumers=200, n_commercial_banks=8, 
                  cbdc_introduction_step=30, cbdc_adoption_rate=0.03,

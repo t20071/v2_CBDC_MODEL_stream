@@ -1,5 +1,10 @@
 from mesa import Agent
 import numpy as np
+from typing import Optional, TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from agent.commercial_bank import CommercialBank
+    from model import CBDCBankingModel
 
 class Consumer(Agent):
     """
@@ -34,7 +39,7 @@ class Consumer(Agent):
         self.adoption_step = None
         
         # Banking relationship
-        self.primary_bank = None
+        self.primary_bank: Optional['CommercialBank'] = None
         self.bank_loyalty = np.random.normal(0.7, 0.2)  # Loyalty to traditional banking
         self.bank_loyalty = max(0.1, min(0.95, self.bank_loyalty))
         
@@ -275,7 +280,8 @@ class Consumer(Agent):
         base_preference -= risk_adjustment
         
         # Weakening bank loyalty over time and stress
-        time_decay = min(0.5, (time_growth if 'time_growth' in locals() else 0) * 2)
+        time_growth = max(0, (self.model.current_step - self.model.cbdc_introduction_step) / 50.0)
+        time_decay = min(0.5, time_growth * 2)
         stress_decay = bank_stress_boost * 0.8
         loyalty_modifier = max(0.3, 1 - time_decay - stress_decay)
         loyalty_adjustment = self.bank_loyalty * 0.15 * loyalty_modifier
