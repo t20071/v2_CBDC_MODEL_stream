@@ -116,7 +116,7 @@ class Consumer(Agent):
         # Adjust based on interest rate differential
         if self.primary_bank:
             bank_rate = self.primary_bank.interest_rate
-            cbdc_rate = self.model.central_bank.cbdc_interest_rate
+            cbdc_rate = self.get_model().central_bank.cbdc_interest_rate
             rate_advantage = cbdc_rate - bank_rate
             
             # Interest-sensitive consumers are more likely to adopt if CBDC offers better rates
@@ -161,7 +161,7 @@ class Consumer(Agent):
     def adopt_cbdc(self):
         """Adopt CBDC and start using it."""
         self.cbdc_adopter = True
-        self.adoption_step = self.model.current_step
+        self.adoption_step = self.get_model().current_step
         
         # Initial CBDC adoption - move substantial funds from bank to CBDC
         initial_transfer_rate = 0.3 + (1 - self.bank_loyalty) * 0.4  # 30-70% initial transfer
@@ -205,8 +205,9 @@ class Consumer(Agent):
         
         # Momentum factor - people move more aggressively to CBDC over time
         momentum_boost = 0
-        if hasattr(self.model, 'current_step') and hasattr(self, 'adoption_step'):
-            steps_since_adoption = self.model.current_step - self.adoption_step
+        if hasattr(self, 'adoption_step') and self.adoption_step is not None:
+            model = self.get_model()
+            steps_since_adoption = model.current_step - self.adoption_step
             momentum_boost = min(0.15, steps_since_adoption * 0.01)  # Up to 15% boost
         
         adjustment_speed = base_adjustment_speed + momentum_boost
@@ -254,15 +255,16 @@ class Consumer(Agent):
         base_preference = 0.5  # Start with 50% allocation (increased from 30%)
         
         # Time-based preference acceleration
-        if hasattr(self.model, 'current_step') and hasattr(self, 'adoption_step'):
-            steps_since_adoption = self.model.current_step - self.adoption_step
+        if hasattr(self, 'adoption_step') and self.adoption_step is not None:
+            model = self.get_model()
+            steps_since_adoption = model.current_step - self.adoption_step
             time_growth = min(0.4, steps_since_adoption * 0.025)  # Up to 40% growth over time
             base_preference += time_growth
         
         # Interest rate differential impact (stronger effect)
         if self.primary_bank:
             bank_rate = self.primary_bank.interest_rate
-            cbdc_rate = self.model.central_bank.cbdc_interest_rate
+            cbdc_rate = self.get_model().central_bank.cbdc_interest_rate
             rate_advantage = cbdc_rate - bank_rate
             rate_adjustment = self.interest_sensitivity * rate_advantage * 10  # Doubled impact
             base_preference += rate_adjustment
@@ -284,7 +286,8 @@ class Consumer(Agent):
         base_preference -= risk_adjustment
         
         # Weakening bank loyalty over time and stress
-        time_growth = max(0, (self.model.current_step - self.model.cbdc_introduction_step) / 50.0)
+        model = self.get_model()
+        time_growth = max(0, (model.current_step - model.cbdc_introduction_step) / 50.0)
         time_decay = min(0.5, time_growth * 2)
         stress_decay = bank_stress_boost * 0.8
         loyalty_modifier = max(0.3, 1 - time_decay - stress_decay)
