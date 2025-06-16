@@ -154,17 +154,27 @@ class Consumer(Agent):
         self.cbdc_adopter = True
         self.adoption_step = self.model.current_step
         
-        # Initial CBDC adoption - move some funds from bank to CBDC
-        initial_transfer_rate = 0.2 + (1 - self.bank_loyalty) * 0.3  # 20-50% initial transfer
+        # Initial CBDC adoption - move substantial funds from bank to CBDC
+        initial_transfer_rate = 0.3 + (1 - self.bank_loyalty) * 0.4  # 30-70% initial transfer
         transfer_amount = self.bank_deposits * initial_transfer_rate
         
-        self.bank_deposits -= transfer_amount
-        self.cbdc_holdings += transfer_amount
+        # Ensure minimum meaningful transfer
+        min_transfer = min(self.bank_deposits * 0.2, self.initial_wealth * 0.15)
+        transfer_amount = max(transfer_amount, min_transfer)
         
-        # Update bank's customer list if customer significantly reduces deposits
-        if self.primary_bank and transfer_amount > self.initial_wealth * 0.3:
-            # Significant deposit reduction might affect bank relationship
-            pass  # Bank will handle this in its own step method
+        # Cap transfer to available deposits
+        transfer_amount = min(transfer_amount, self.bank_deposits)
+        
+        if transfer_amount > 0:
+            self.bank_deposits -= transfer_amount
+            self.cbdc_holdings += transfer_amount
+            
+            # Update bank's total deposits immediately
+            if self.primary_bank:
+                self.primary_bank.update_deposits()
+                # Mark customer as potentially churning
+                if transfer_amount > self.initial_wealth * 0.25:
+                    self.bank_loyalty *= 0.7  # Reduce loyalty after major transfer
     
     def rebalance_portfolio(self):
         """Rebalance portfolio between bank deposits and CBDC."""
@@ -179,13 +189,23 @@ class Consumer(Agent):
         target_cbdc_ratio = self.get_cbdc_preference()
         target_cbdc_amount = total_liquid_wealth * target_cbdc_ratio
         
-        # Gradual rebalancing (don't move everything at once)
-        adjustment_speed = 0.1  # 10% adjustment per step
+        # Accelerated rebalancing with momentum effect
+        base_adjustment_speed = 0.2  # 20% adjustment per step (increased from 10%)
+        
+        # Momentum factor - people move more aggressively to CBDC over time
+        momentum_boost = 0
+        if hasattr(self.model, 'current_step') and hasattr(self, 'adoption_step'):
+            steps_since_adoption = self.model.current_step - self.adoption_step
+            momentum_boost = min(0.15, steps_since_adoption * 0.01)  # Up to 15% boost
+        
+        adjustment_speed = base_adjustment_speed + momentum_boost
         cbdc_gap = target_cbdc_amount - self.cbdc_holdings
         adjustment = cbdc_gap * adjustment_speed
         
-        # Make the adjustment
-        if abs(adjustment) > 1:  # Only adjust if meaningful amount
+        # Make the adjustment with minimum threshold
+        if abs(adjustment) > 10:  # Lowered threshold for more frequent adjustments
+            old_bank_deposits = self.bank_deposits
+            
             self.cbdc_holdings += adjustment
             self.bank_deposits -= adjustment
             
@@ -197,44 +217,63 @@ class Consumer(Agent):
             if self.bank_deposits < 0:
                 self.cbdc_holdings += self.bank_deposits
                 self.bank_deposits = 0
+            
+            # Update bank's total deposits if significant change occurred
+            if self.primary_bank and abs(self.bank_deposits - old_bank_deposits) > 50:
+                self.primary_bank.update_deposits()
     
     def get_cbdc_preference(self):
         """Calculate preferred CBDC allocation ratio."""
         if not self.cbdc_adopter:
             return 0.0
         
-        # Base preference
-        base_preference = 0.3  # 30% base allocation to CBDC
+        # Progressive base preference that grows over time
+        base_preference = 0.5  # Start with 50% allocation (increased from 30%)
         
-        # Adjust based on interest rate differential
+        # Time-based preference acceleration
+        if hasattr(self.model, 'current_step') and hasattr(self, 'adoption_step'):
+            steps_since_adoption = self.model.current_step - self.adoption_step
+            time_growth = min(0.4, steps_since_adoption * 0.025)  # Up to 40% growth over time
+            base_preference += time_growth
+        
+        # Interest rate differential impact (stronger effect)
         if self.primary_bank:
             bank_rate = self.primary_bank.interest_rate
             cbdc_rate = self.model.central_bank.cbdc_interest_rate
             rate_advantage = cbdc_rate - bank_rate
-            
-            # Interest-sensitive consumers allocate more to higher-yielding option
-            rate_adjustment = self.interest_sensitivity * rate_advantage * 5
+            rate_adjustment = self.interest_sensitivity * rate_advantage * 10  # Doubled impact
             base_preference += rate_adjustment
         
-        # Convenience preference increases CBDC allocation
-        convenience_adjustment = self.convenience_preference * 0.2
+        # Banking system stress drives CBDC preference
+        bank_stress_boost = 0
+        if self.primary_bank and hasattr(self.primary_bank, 'liquidity_stress_level'):
+            bank_stress = self.primary_bank.liquidity_stress_level
+            bank_stress_boost = bank_stress * 0.3  # Up to 30% boost during stress
+            base_preference += bank_stress_boost
+        
+        # Enhanced convenience preference
+        convenience_adjustment = self.convenience_preference * 0.3  # Increased from 0.2
         base_preference += convenience_adjustment
         
-        # Risk aversion reduces CBDC allocation (familiarity with banks)
-        risk_adjustment = self.risk_aversion * 0.15
+        # Reduced risk penalty during banking stress
+        stress_modifier = 1 - (bank_stress_boost * 0.7)
+        risk_adjustment = self.risk_aversion * 0.1 * stress_modifier  # Reduced penalty
         base_preference -= risk_adjustment
         
-        # Bank loyalty reduces CBDC allocation
-        loyalty_adjustment = self.bank_loyalty * 0.2
+        # Weakening bank loyalty over time and stress
+        time_decay = min(0.5, (time_growth if 'time_growth' in locals() else 0) * 2)
+        stress_decay = bank_stress_boost * 0.8
+        loyalty_modifier = max(0.3, 1 - time_decay - stress_decay)
+        loyalty_adjustment = self.bank_loyalty * 0.15 * loyalty_modifier
         base_preference -= loyalty_adjustment
         
-        # Social influence (if peers use CBDC heavily, increase allocation)
+        # Amplified social influence
         peer_cbdc_usage = self.get_peer_cbdc_usage()
-        social_adjustment = self.social_influence_weight * peer_cbdc_usage * 0.3
+        social_adjustment = self.social_influence_weight * peer_cbdc_usage * 0.4  # Increased
         base_preference += social_adjustment
         
-        # Constrain between 0 and 0.8 (maximum 80% in CBDC)
-        return max(0.0, min(0.8, base_preference))
+        # Higher maximum allocation to CBDC
+        return max(0.0, min(0.9, base_preference))  # Up to 90% in CBDC
     
     def get_peer_adoption_rate(self):
         """Get CBDC adoption rate among peers (simplified as overall adoption rate)."""

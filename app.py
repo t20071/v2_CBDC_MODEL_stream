@@ -181,10 +181,21 @@ def display_results():
     with tab1:
         st.subheader("CBDC Substitution Effects")
         
-        # Calculate substitution metrics
-        initial_deposits = data['Total_Bank_Deposits'].iloc[0]
-        if initial_deposits > 0:
-            data['Deposit_Substitution_Rate'] = (initial_deposits - data['Total_Bank_Deposits']) / initial_deposits * 100
+        # Calculate substitution metrics with proper baseline
+        # Find pre-CBDC baseline (steps before CBDC introduction)
+        cbdc_intro_step = params['cbdc_introduction_step']
+        pre_cbdc_data = data[data.index < cbdc_intro_step]
+        
+        if len(pre_cbdc_data) > 0:
+            # Use average of last few steps before CBDC as baseline
+            baseline_steps = min(5, len(pre_cbdc_data))
+            baseline_deposits = pre_cbdc_data['Total_Bank_Deposits'].tail(baseline_steps).mean()
+        else:
+            # Fallback to first observation
+            baseline_deposits = data['Total_Bank_Deposits'].iloc[0]
+        
+        if baseline_deposits > 0:
+            data['Deposit_Substitution_Rate'] = (baseline_deposits - data['Total_Bank_Deposits']) / baseline_deposits * 100
         else:
             data['Deposit_Substitution_Rate'] = 0
         
