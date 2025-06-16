@@ -302,10 +302,16 @@ def display_results():
             row=3, col=1
         )
         
-        # Add 37% baseline reference line
-        fig_sub.add_hline(y=37.0, line_dash="dash", line_color="blue",
-                         annotation_text="37% Initial Bank Deposit Baseline",
-                         row=3, col=1)
+        # Add 37% baseline reference line to third subplot
+        baseline_trace = go.Scatter(
+            x=data.index, 
+            y=[37.0] * len(data.index),
+            mode='lines',
+            line=dict(dash='dash', color='blue', width=2),
+            name='37% Initial Baseline',
+            showlegend=True
+        )
+        fig_sub.add_trace(baseline_trace, row=3, col=1)
         
         fig_sub.update_layout(height=800, title_text="CBDC Substitution Analysis Over Time")
         st.plotly_chart(fig_sub, use_container_width=True)
