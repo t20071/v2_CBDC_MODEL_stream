@@ -169,6 +169,71 @@ def display_results():
     
     st.plotly_chart(fig_adoption, use_container_width=True)
     
+    # Wealth Allocation Dashboard
+    st.header("💰 Consumer Wealth Allocation (37% Initial Bank Deposit Baseline)")
+    
+    # Calculate wealth allocation percentages
+    total_consumer_wealth = params['n_consumers'] * params['initial_consumer_wealth']
+    
+    # Current allocations as percentages of total wealth
+    current_bank_pct = (data['Total_Bank_Deposits'] / total_consumer_wealth * 100).fillna(0)
+    current_cbdc_pct = (data['Total_CBDC_Holdings'] / total_consumer_wealth * 100).fillna(0)
+    current_other_pct = 100 - current_bank_pct - current_cbdc_pct  # Other assets
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Initial Bank Deposits", "37.0%", delta=None)
+    
+    with col2:
+        final_bank_pct = current_bank_pct.iloc[-1]
+        bank_change = final_bank_pct - 37.0
+        st.metric("Final Bank Deposits", f"{final_bank_pct:.1f}%", delta=f"{bank_change:.1f}%")
+    
+    with col3:
+        final_cbdc_pct = current_cbdc_pct.iloc[-1]
+        st.metric("CBDC Holdings", f"{final_cbdc_pct:.1f}%", delta=f"+{final_cbdc_pct:.1f}%")
+    
+    with col4:
+        deposit_shift = 37.0 - final_bank_pct
+        st.metric("Deposit Shift to CBDC", f"{deposit_shift:.1f}%", delta=f"-{deposit_shift:.1f}%")
+    
+    # Wealth allocation over time
+    fig_wealth = go.Figure()
+    
+    fig_wealth.add_trace(go.Scatter(
+        x=data.index, y=current_bank_pct,
+        name='Bank Deposits %', fill='tonexty',
+        line=dict(color='blue', width=2)
+    ))
+    
+    fig_wealth.add_trace(go.Scatter(
+        x=data.index, y=current_cbdc_pct,
+        name='CBDC Holdings %', fill='tonexty',
+        line=dict(color='gold', width=2)
+    ))
+    
+    fig_wealth.add_trace(go.Scatter(
+        x=data.index, y=current_other_pct,
+        name='Other Assets %', fill='tonexty',
+        line=dict(color='gray', width=1)
+    ))
+    
+    # Add CBDC introduction line
+    fig_wealth.add_vline(x=params['cbdc_introduction_step'], 
+                        line_dash="dash", line_color="red",
+                        annotation_text="CBDC Launch")
+    
+    fig_wealth.update_layout(
+        title="Consumer Wealth Allocation Over Time (% of Total Wealth)",
+        xaxis_title="Simulation Step",
+        yaxis_title="Percentage of Total Consumer Wealth",
+        yaxis=dict(range=[0, 100]),
+        height=500
+    )
+    
+    st.plotly_chart(fig_wealth, use_container_width=True)
+    
     # Detailed Time Series Analysis
     st.header("📊 Detailed Time Series Analysis")
     
@@ -204,9 +269,9 @@ def display_results():
         data['Cumulative_CBDC_Share'] = data['Total_CBDC_Holdings'] / (data['Total_CBDC_Holdings'] + data['Total_Bank_Deposits']) * 100
         
         fig_sub = make_subplots(rows=3, cols=1, 
-                               subplot_titles=('Deposit Substitution Over Time (%)', 
+                               subplot_titles=('Deposit Substitution from 37% Baseline (%)', 
                                              'CBDC Market Share Growth (%)',
-                                             'Absolute Values: CBDC vs Bank Deposits'))
+                                             'Wealth Allocation: CBDC vs Bank Deposits (%)')) 
         
         # Deposit substitution rate over time
         fig_sub.add_trace(
@@ -225,17 +290,22 @@ def display_results():
             row=2, col=1
         )
         
-        # Absolute values comparison
+        # Percentage allocation comparison
         fig_sub.add_trace(
-            go.Scatter(x=data.index, y=data['Total_Bank_Deposits'],
-                      name='Bank Deposits', line=dict(color='orange')),
+            go.Scatter(x=data.index, y=current_bank_pct,
+                      name='Bank Deposits % of Total Wealth', line=dict(color='orange')),
             row=3, col=1
         )
         fig_sub.add_trace(
-            go.Scatter(x=data.index, y=data['Total_CBDC_Holdings'],
-                      name='CBDC Holdings', line=dict(color='green')),
+            go.Scatter(x=data.index, y=current_cbdc_pct,
+                      name='CBDC Holdings % of Total Wealth', line=dict(color='green')),
             row=3, col=1
         )
+        
+        # Add 37% baseline reference line
+        fig_sub.add_hline(y=37.0, line_dash="dash", line_color="blue",
+                         annotation_text="37% Initial Bank Deposit Baseline",
+                         row=3, col=1)
         
         fig_sub.update_layout(height=800, title_text="CBDC Substitution Analysis Over Time")
         st.plotly_chart(fig_sub, use_container_width=True)

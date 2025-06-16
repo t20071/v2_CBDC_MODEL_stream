@@ -23,10 +23,10 @@ class Consumer(Agent):
         self.risk_aversion = max(0.1, min(0.9, risk_aversion))  # Constrain between 0.1 and 0.9
         self.cbdc_adoption_probability = cbdc_adoption_probability
         
-        # Financial holdings
-        self.bank_deposits = initial_wealth  # Initially all wealth in bank
+        # Financial holdings - 37% of wealth in bank deposits initially
+        self.bank_deposits = initial_wealth * 0.37  # 37% in bank deposits
         self.cbdc_holdings = 0
-        self.cash_holdings = 0
+        self.other_assets = initial_wealth * 0.63  # 63% in other assets (savings, investments, cash)
         
         # CBDC adoption status
         self.cbdc_adopter = False
@@ -177,11 +177,13 @@ class Consumer(Agent):
                     self.bank_loyalty *= 0.7  # Reduce loyalty after major transfer
     
     def rebalance_portfolio(self):
-        """Rebalance portfolio between bank deposits and CBDC."""
+        """Rebalance portfolio between bank deposits, CBDC, and other assets."""
         if not self.cbdc_adopter:
             return
         
-        total_liquid_wealth = self.bank_deposits + self.cbdc_holdings
+        # Total liquid wealth includes bank deposits, CBDC, and moveable other assets
+        moveable_other_assets = self.other_assets * 0.5  # 50% of other assets can be moved
+        total_liquid_wealth = self.bank_deposits + self.cbdc_holdings + moveable_other_assets
         if total_liquid_wealth <= 0:
             return
         
@@ -206,17 +208,29 @@ class Consumer(Agent):
         if abs(adjustment) > 10:  # Lowered threshold for more frequent adjustments
             old_bank_deposits = self.bank_deposits
             
-            self.cbdc_holdings += adjustment
-            self.bank_deposits -= adjustment
+            if adjustment > 0:  # Moving more money TO CBDC
+                # Prioritize transferring from bank deposits first
+                from_bank = min(adjustment, self.bank_deposits)
+                remaining_needed = adjustment - from_bank
+                
+                # If need more, get from other assets
+                from_other = min(remaining_needed, moveable_other_assets)
+                
+                # Execute transfers
+                self.bank_deposits -= from_bank
+                self.other_assets -= from_other
+                self.cbdc_holdings += (from_bank + from_other)
+                
+            else:  # Moving money FROM CBDC (rare case)
+                transfer_amount = min(abs(adjustment), self.cbdc_holdings)
+                self.cbdc_holdings -= transfer_amount
+                # Put back into bank deposits for simplicity
+                self.bank_deposits += transfer_amount
             
             # Ensure non-negative holdings
-            if self.cbdc_holdings < 0:
-                self.bank_deposits += self.cbdc_holdings
-                self.cbdc_holdings = 0
-            
-            if self.bank_deposits < 0:
-                self.cbdc_holdings += self.bank_deposits
-                self.bank_deposits = 0
+            self.bank_deposits = max(0, self.bank_deposits)
+            self.cbdc_holdings = max(0, self.cbdc_holdings)
+            self.other_assets = max(0, self.other_assets)
             
             # Update bank's total deposits if significant change occurred
             if self.primary_bank and abs(self.bank_deposits - old_bank_deposits) > 50:
