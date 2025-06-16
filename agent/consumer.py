@@ -114,21 +114,35 @@ class Consumer(Agent):
             rate_influence = self.interest_sensitivity * rate_advantage * 10
             adoption_probability += rate_influence
         
-        # Social influence (network effects)
+        # Social influence (network effects) - accelerates with time
         peer_adoption_rate = self.get_peer_adoption_rate()
         social_influence = self.social_influence_weight * peer_adoption_rate
+        
+        # Time momentum - adoption accelerates over time
+        if hasattr(self.model, 'current_step') and hasattr(self.model, 'cbdc_introduction_step'):
+            steps_since_introduction = self.model.current_step - self.model.cbdc_introduction_step
+            momentum_factor = min(0.8, steps_since_introduction * 0.04)  # Builds momentum
+            social_influence *= (1 + momentum_factor)  # Amplifies social influence
+        
         adoption_probability += social_influence
+        
+        # Banking system stress drives CBDC adoption
+        bank_stress = 0
+        if self.primary_bank and hasattr(self.primary_bank, 'liquidity_stress_level'):
+            bank_stress = self.primary_bank.liquidity_stress_level
+            stress_penalty = bank_stress * 0.15  # Stress drives switch to CBDC
+            adoption_probability += stress_penalty
         
         # Convenience factor (CBDC is assumed to be more convenient)
         convenience_boost = self.convenience_preference * 0.1
         adoption_probability += convenience_boost
         
-        # Risk aversion reduces adoption probability
-        risk_penalty = self.risk_aversion * 0.05
+        # Risk aversion reduces adoption probability (but less if bank is stressed)
+        risk_penalty = self.risk_aversion * 0.05 * (1 - bank_stress * 0.5)
         adoption_probability -= risk_penalty
         
-        # Bank loyalty reduces adoption probability
-        loyalty_penalty = self.bank_loyalty * 0.08
+        # Bank loyalty reduces adoption probability (weakens under stress)
+        loyalty_penalty = self.bank_loyalty * 0.08 * (1 - bank_stress * 0.7)
         adoption_probability -= loyalty_penalty
         
         # Make adoption decision

@@ -186,17 +186,29 @@ class CommercialBank(Agent):
         if self.model.cbdc_introduced:
             # H1: CBDC reduces network centrality, especially for small banks
             cbdc_adoption_rate = self.model.compute_cbdc_adoption_rate()
-            centrality_decay = cbdc_adoption_rate * self.cbdc_vulnerability
             
-            # Small banks lose centrality faster
+            # Dynamic centrality reduction based on CBDC adoption and customer loss
+            customer_loss_rate = 1 - self.customer_retention_rate
+            centrality_impact = cbdc_adoption_rate * self.cbdc_vulnerability * (1 + customer_loss_rate)
+            
+            # Small banks lose centrality faster and more dramatically
             if self.bank_type == "small_medium":
-                centrality_decay *= 1.5  # 50% faster decline for small banks
+                centrality_impact *= 2.0  # Double impact for small banks
+                # Additional penalty for deposit concentration
+                deposit_loss_rate = max(0, (self.initial_capital - self.total_deposits) / self.initial_capital)
+                centrality_impact *= (1 + deposit_loss_rate)
             
-            self.network_centrality = max(0.1, self.network_centrality - centrality_decay * 0.02)
+            # Apply gradual centrality decay
+            decay_rate = min(0.05, centrality_impact * 0.03)  # Max 5% decay per step
+            self.network_centrality = max(0.05, self.network_centrality - decay_rate)
             
             # H4: Reduce interbank connections as CBDC provides alternative
-            if cbdc_adoption_rate > 0.3:  # When CBDC adoption exceeds 30%
-                connection_loss = (cbdc_adoption_rate - 0.3) * 0.1
+            if cbdc_adoption_rate > 0.2:  # When CBDC adoption exceeds 20%
+                connection_impact = (cbdc_adoption_rate - 0.2) * 0.15
+                if self.bank_type == "small_medium":
+                    connection_impact *= 1.5  # Small banks lose connections faster
+                
+                connection_loss = connection_impact * 0.1  # Gradual loss
                 self.interbank_connections = max(0, self.interbank_connections - connection_loss)
     
     def calculate_liquidity_stress(self):
@@ -204,14 +216,31 @@ class CommercialBank(Agent):
         if self.model.cbdc_introduced:
             # H3: Rapid CBDC adoption creates liquidity stress
             cbdc_adoption_rate = self.model.compute_cbdc_adoption_rate()
-            deposit_outflow_rate = min(0.8, cbdc_adoption_rate * self.cbdc_vulnerability)
             
-            # Liquidity stress increases with deposit outflows
-            self.liquidity_stress_level = deposit_outflow_rate * (1 - self.liquidity_ratio)
+            # Calculate deposit outflow velocity (rate of change)
+            current_deposits = self.total_deposits
+            deposit_change_rate = max(0, (self.initial_capital - current_deposits) / self.initial_capital)
             
-            # Small banks experience higher stress
-            if self.bank_type == "small_medium" and self.liquidity_stress_level > 0.6:
-                self.liquidity_stress_level *= 1.3  # 30% higher stress
+            # Stress increases with both adoption rate and deposit velocity
+            base_stress = cbdc_adoption_rate * self.cbdc_vulnerability
+            velocity_stress = deposit_change_rate * 0.5  # Velocity component
+            
+            # Liquidity stress combines multiple factors
+            liquidity_gap = max(0, 1 - self.liquidity_ratio)  # How far from adequate liquidity
+            customer_flight = 1 - self.customer_retention_rate  # Customer loss rate
+            
+            self.liquidity_stress_level = min(1.0, 
+                base_stress + velocity_stress + (liquidity_gap * 0.3) + (customer_flight * 0.2))
+            
+            # Small banks experience compounding stress effects
+            if self.bank_type == "small_medium":
+                # Stress amplification for small banks
+                stress_multiplier = 1.0 + (cbdc_adoption_rate * 0.8)  # Up to 80% more stress
+                self.liquidity_stress_level = min(1.0, self.liquidity_stress_level * stress_multiplier)
+                
+                # Crisis threshold - small banks hit critical stress faster
+                if self.liquidity_stress_level > 0.7 and cbdc_adoption_rate > 0.4:
+                    self.liquidity_stress_level = min(1.0, self.liquidity_stress_level * 1.2)
     
     def get_financial_strength(self):
         """Calculate overall financial strength score."""

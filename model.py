@@ -271,12 +271,25 @@ class CBDCBankingModel(Model):
         if not self.cbdc_introduced:
             return 0.1  # Minimal centrality before CBDC
         
-        # Central bank centrality increases with CBDC adoption
+        # Central bank centrality increases with CBDC adoption and usage
         cbdc_adoption = self.compute_cbdc_adoption_rate()
-        base_centrality = 0.1
-        cbdc_boost = cbdc_adoption * 0.8  # Up to 80% boost from CBDC
+        total_cbdc_holdings = self.compute_total_cbdc_holdings()
+        total_bank_deposits = self.compute_total_bank_deposits()
         
-        return min(1.0, base_centrality + cbdc_boost)
+        # Market share component
+        total_financial_assets = total_cbdc_holdings + total_bank_deposits
+        cbdc_market_share = total_cbdc_holdings / total_financial_assets if total_financial_assets > 0 else 0
+        
+        # Network dominance grows with both adoption rate and market share
+        base_centrality = 0.1
+        adoption_boost = cbdc_adoption * 0.6  # Up to 60% from adoption
+        market_boost = cbdc_market_share * 0.4  # Up to 40% from market share
+        
+        # Additional boost from being the sole CBDC issuer
+        monopoly_boost = min(0.2, cbdc_adoption * 0.3) if cbdc_adoption > 0.3 else 0
+        
+        final_centrality = base_centrality + adoption_boost + market_boost + monopoly_boost
+        return min(1.0, final_centrality)
     
     def initialize_banking_network(self):
         """Initialize interbank network connections for H4 analysis."""
