@@ -87,6 +87,7 @@ The application follows a Model-View architecture pattern:
 
 - **model_assumptions.md**: Comprehensive documentation of all model assumptions, agent behaviors, and academic references
 - **initial_conditions.md**: Detailed documentation of all initial conditions, parameter values, and empirical sources
+- **agent_interactions_mermaid.md**: Detailed Mermaid charts showing all agent interactions, network structures, and decision processes
 - **Agent Flow Chart**: Interactive visualization of agent interactions available in the simulation interface
 
 ## Changelog
