@@ -1,0 +1,6 @@
+@echo off
+echo Activating virtual environment...
+call venv\Scripts\activate
+echo Starting CBDC Banking Simulation...
+streamlit run app.py
+pause
