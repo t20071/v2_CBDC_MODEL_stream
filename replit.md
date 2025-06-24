@@ -86,6 +86,7 @@ The application follows a Model-View architecture pattern:
 ## Model Documentation
 
 - **model_assumptions.md**: Comprehensive documentation of all model assumptions, agent behaviors, and academic references
+- **initial_conditions.md**: Detailed documentation of all initial conditions, parameter values, and empirical sources
 - **Agent Flow Chart**: Interactive visualization of agent interactions available in the simulation interface
 
 ## Changelog
