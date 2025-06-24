@@ -238,9 +238,9 @@ def display_results():
     st.header("📊 Detailed Time Series Analysis")
     
     # Create tabs for different analyses
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Substitution Effects", "Network Centrality (H1)", "Systemic Risk (H3)", 
-        "Network Connectivity (H4)", "Central Bank Dominance (H6)"
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "CBDC Substitution", "H1: Network Centrality", "H3: Liquidity Stress", 
+        "H4: Network Connectivity", "H6: Central Bank Dominance", "Agent Flow Chart"
     ])
     
     with tab1:
@@ -487,6 +487,204 @@ def display_results():
         with col3:
             dominance_ratio = final_cb_centrality / final_avg_bank_centrality if final_avg_bank_centrality > 0 else 0
             st.metric("CB Dominance Ratio", f"{dominance_ratio:.1f}x")
+    
+    with tab6:
+        st.subheader("Agent Interaction Flow Chart")
+        st.markdown("""
+        This interactive flow chart shows how the three types of agents interact in the CBDC banking simulation:
+        - **Central Bank** (Gold Diamond): Issues CBDC and manages monetary policy
+        - **Commercial Banks** (Blue Square): Provide traditional banking services and compete with CBDC
+        - **Consumers** (Green Circle): Make financial decisions between bank deposits and CBDC
+        """)
+        
+        # Create agent interaction flowchart
+        fig_flow = go.Figure()
+        
+        # Define positions for agents
+        central_bank_pos = (0.5, 0.9)
+        commercial_banks_pos = (0.2, 0.4)
+        consumers_pos = (0.8, 0.4)
+        
+        # Add agent nodes
+        fig_flow.add_trace(go.Scatter(
+            x=[central_bank_pos[0]], y=[central_bank_pos[1]],
+            mode='markers+text',
+            marker=dict(size=80, color='gold', symbol='diamond'),
+            text=['Central Bank'],
+            textposition="middle center",
+            textfont=dict(size=12, color='black'),
+            name='Central Bank',
+            hovertemplate='<b>Central Bank</b><br>' +
+                         '• Issues CBDC<br>' +
+                         '• Sets monetary policy<br>' +
+                         '• Monitors systemic risk<br>' +
+                         '• Promotes CBDC adoption<extra></extra>'
+        ))
+        
+        fig_flow.add_trace(go.Scatter(
+            x=[commercial_banks_pos[0]], y=[commercial_banks_pos[1]],
+            mode='markers+text',
+            marker=dict(size=80, color='lightblue', symbol='square'),
+            text=['Commercial<br>Banks'],
+            textposition="middle center",
+            textfont=dict(size=12, color='black'),
+            name='Commercial Banks',
+            hovertemplate='<b>Commercial Banks</b><br>' +
+                         '• Accept deposits<br>' +
+                         '• Provide loans<br>' +
+                         '• Compete with CBDC<br>' +
+                         '• Adjust interest rates<extra></extra>'
+        ))
+        
+        fig_flow.add_trace(go.Scatter(
+            x=[consumers_pos[0]], y=[consumers_pos[1]],
+            mode='markers+text',
+            marker=dict(size=80, color='lightgreen', symbol='circle'),
+            text=['Consumers'],
+            textposition="middle center",
+            textfont=dict(size=12, color='black'),
+            name='Consumers',
+            hovertemplate='<b>Consumers</b><br>' +
+                         '• Make financial decisions<br>' +
+                         '• Choose between bank deposits and CBDC<br>' +
+                         '• Respond to interest rates<br>' +
+                         '• Influenced by peers<extra></extra>'
+        ))
+        
+        # Add interaction arrows
+        interactions = [
+            # Central Bank to Commercial Banks
+            {
+                'start': central_bank_pos,
+                'end': commercial_banks_pos,
+                'label': 'CBDC Competition\nMonetary Policy\nSystemic Risk Monitoring',
+                'color': 'red'
+            },
+            # Central Bank to Consumers
+            {
+                'start': central_bank_pos,
+                'end': consumers_pos,
+                'label': 'CBDC Issuance\nCBDC Interest Rates\nAdoption Incentives',
+                'color': 'orange'
+            },
+            # Commercial Banks to Consumers
+            {
+                'start': commercial_banks_pos,
+                'end': consumers_pos,
+                'label': 'Deposit Services\nLoan Products\nCompetitive Rates',
+                'color': 'blue'
+            },
+            # Consumer feedback to Commercial Banks
+            {
+                'start': consumers_pos,
+                'end': commercial_banks_pos,
+                'label': 'Deposit Flows\nCustomer Attrition\nDemand for Services',
+                'color': 'green'
+            },
+            # Consumer feedback to Central Bank
+            {
+                'start': consumers_pos,
+                'end': central_bank_pos,
+                'label': 'CBDC Adoption\nMarket Response\nUsage Patterns',
+                'color': 'purple'
+            }
+        ]
+        
+        # Add arrows for interactions
+        for i, interaction in enumerate(interactions):
+            start_x, start_y = interaction['start']
+            end_x, end_y = interaction['end']
+            
+            # Offset arrows slightly to avoid overlap
+            offset = 0.03 * (i % 2 * 2 - 1)  # Alternate between -0.03 and 0.03
+            
+            fig_flow.add_annotation(
+                x=end_x,
+                y=end_y,
+                ax=start_x + offset,
+                ay=start_y + offset,
+                xref="x", yref="y",
+                axref="x", ayref="y",
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=3,
+                arrowcolor=interaction['color'],
+                showarrow=True
+            )
+            
+            # Add label at midpoint
+            mid_x = (start_x + end_x) / 2 + offset
+            mid_y = (start_y + end_y) / 2 + offset
+            
+            fig_flow.add_annotation(
+                x=mid_x,
+                y=mid_y,
+                text=interaction['label'],
+                showarrow=False,
+                font=dict(size=9, color=interaction['color']),
+                bgcolor="rgba(255,255,255,0.8)",
+                bordercolor=interaction['color'],
+                borderwidth=1
+            )
+        
+        # Update layout
+        fig_flow.update_layout(
+            title={
+                'text': "Agent Interaction Overview",
+                'x': 0.5,
+                'xanchor': 'center',
+                'font': {'size': 18}
+            },
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0, 1]),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0, 1]),
+            showlegend=False,
+            height=600,
+            plot_bgcolor='white'
+        )
+        
+        st.plotly_chart(fig_flow, use_container_width=True)
+        
+        # Key interactions summary
+        st.subheader("Key Interactions Summary")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **Central Bank Actions:**
+            - Issues CBDC currency to consumers
+            - Sets CBDC interest rates for competition
+            - Creates monetary policy affecting banks
+            - Monitors systemic risk in banking system
+            - Promotes CBDC adoption through incentives
+            """)
+            
+            st.markdown("""
+            **Commercial Bank Actions:**
+            - Accept consumer deposits
+            - Provide loan products and services
+            - Adjust interest rates to compete with CBDC
+            - Maintain customer relationships
+            - Respond to deposit outflows
+            """)
+        
+        with col2:
+            st.markdown("""
+            **Consumer Actions:**
+            - Make portfolio allocation decisions
+            - Choose between bank deposits and CBDC
+            - Respond to interest rate differentials
+            - Influenced by peer adoption patterns
+            - Provide feedback through usage patterns
+            """)
+            
+            st.markdown("""
+            **Feedback Mechanisms:**
+            - Deposit flows signal consumer preferences
+            - CBDC adoption rates guide central bank policy
+            - Banking system stress triggers support measures
+            - Market dynamics drive competitive responses
+            """)
     
     # Previous Banking Impact tab content (now hidden, but keeping structure)
     with st.expander("Commercial Banking Details"):
