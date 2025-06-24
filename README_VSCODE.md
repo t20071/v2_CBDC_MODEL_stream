@@ -79,7 +79,9 @@ port = 8501
 streamlit run app.py
 ```
 
-The application will open in your default web browser at `http://localhost:8501`
+The application will automatically open in your default web browser at `http://localhost:8501`
+
+**Note**: If it doesn't open automatically, manually navigate to `http://localhost:8501` in your browser.
 
 ## VS Code Configuration
 
@@ -139,6 +141,10 @@ Create `.vscode/launch.json` for debugging:
 1. **Import Errors**: Make sure virtual environment is activated and all dependencies are installed
 2. **Port Already in Use**: Change port in `.streamlit/config.toml` or use `streamlit run app.py --server.port 8502`
 3. **Python Version**: Ensure you're using Python 3.11+
+4. **Browser Won't Open**: 
+   - If browser doesn't open automatically, go to `http://localhost:8501` manually
+   - Never use `http://0.0.0.0:8501` - this won't work in browsers
+   - Make sure no firewall is blocking the port
 
 ### Dependencies Issues
 
