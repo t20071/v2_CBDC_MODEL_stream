@@ -83,6 +83,11 @@ The application follows a Model-View architecture pattern:
 - `.streamlit/config.toml`: Streamlit server configuration for headless operation
 - `pyproject.toml`: Python package configuration with dependency specifications
 
+## Model Documentation
+
+- **model_assumptions.md**: Comprehensive documentation of all model assumptions, agent behaviors, and academic references
+- **Agent Flow Chart**: Interactive visualization of agent interactions available in the simulation interface
+
 ## Changelog
 
 ```
@@ -98,6 +103,9 @@ Changelog:
 - June 16, 2025. Converted all monetary displays to percentage-based wealth allocation tracking
 - June 16, 2025. Fixed LSP type annotation errors throughout agent classes for proper model access
 - June 16, 2025. Enhanced transfer mechanics to draw from both bank deposits and other assets
+- June 24, 2025. Created interactive agent flow chart visualization
+- June 24, 2025. Added comprehensive VS Code setup with requirements.txt and configuration files
+- June 24, 2025. Documented all model assumptions with academic references
 ```
 
 ## User Preferences
