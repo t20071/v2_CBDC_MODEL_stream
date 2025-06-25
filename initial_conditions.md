@@ -50,7 +50,7 @@ This document provides comprehensive documentation of all initial conditions for
 |-----------|---------------|------------------|
 | Unique ID | 0 | Model convention |
 | CBDC Interest Rate | 1.0% (configurable) | Central bank CBDC proposals |
-| CBDC Supply | 0 | No CBDC pre-introduction |
+| CBDC Supply | 0 | Demand-driven expansion policy |
 | CBDC Outstanding | 0 | No circulation initially |
 | CBDC Introduced | False | Introduction at specified step |
 

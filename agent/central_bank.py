@@ -33,6 +33,10 @@ class CentralBank(Agent):
         self.banking_system_health = 1.0
         self.cbdc_adoption_rate = 0.0
         self.systemic_risk_level = 0.0
+        
+        # CBDC supply tracking
+        self.total_supply_expansions = 0
+        self.cumulative_supply_expansion = 0
     
     def step(self):
         """Execute one step of central bank operations."""
@@ -52,13 +56,14 @@ class CentralBank(Agent):
     def introduce_cbdc(self):
         """Introduce CBDC to the economy."""
         self.cbdc_introduced = True
-        self.cbdc_supply = 1000000  # Initial CBDC supply
+        self.cbdc_supply = 0  # Start with zero supply - will expand based on demand
         
         # Notify all consumers about CBDC availability
         for consumer in self.model.consumers:
             consumer.cbdc_available = True
         
         print(f"Central Bank introduced CBDC with {self.cbdc_interest_rate*100:.1f}% interest rate")
+        print("CBDC supply will expand automatically to meet demand")
     
     def monitor_cbdc_impact(self):
         """Monitor the impact of CBDC on the financial system."""
@@ -163,11 +168,29 @@ class CentralBank(Agent):
                 bank.capital += emergency_liquidity  # Assume this is emergency funding
     
     def update_cbdc_outstanding(self):
-        """Update the total CBDC outstanding in the economy."""
-        self.cbdc_outstanding = sum(
+        """Update the total CBDC outstanding in the economy and expand supply to meet demand."""
+        # Calculate current CBDC demand (total holdings by consumers)
+        current_demand = sum(
             consumer.cbdc_holdings for consumer in self.model.consumers
             if hasattr(consumer, 'cbdc_holdings')
         )
+        
+        # Expand supply to exactly match demand - central bank accommodates all demand
+        if current_demand > self.cbdc_supply:
+            previous_supply = self.cbdc_supply
+            self.cbdc_supply = current_demand
+            supply_expansion = self.cbdc_supply - previous_supply
+            
+            if supply_expansion > 0:
+                # Track supply expansions for analysis
+                self.total_supply_expansions += 1
+                self.cumulative_supply_expansion += supply_expansion
+                
+                print(f"Central Bank expanded CBDC supply by ${supply_expansion:,.0f} to meet demand")
+                print(f"Total CBDC supply now: ${self.cbdc_supply:,.0f}")
+        
+        # Update outstanding amount (should equal supply in demand-driven system)
+        self.cbdc_outstanding = current_demand
     
     def get_cbdc_promotion_effectiveness(self):
         """Assess how well CBDC promotion is working."""
@@ -187,11 +210,14 @@ class CentralBank(Agent):
             'cbdc_introduced': self.cbdc_introduced,
             'cbdc_adoption_rate': self.cbdc_adoption_rate,
             'cbdc_outstanding': self.cbdc_outstanding,
+            'cbdc_supply': self.cbdc_supply,
             'cbdc_interest_rate': self.cbdc_interest_rate,
             'banking_system_health': self.banking_system_health,
             'systemic_risk_level': self.systemic_risk_level,
-            'promotion_effectiveness': self.get_cbdc_promotion_effectiveness()
+            'promotion_effectiveness': self.get_cbdc_promotion_effectiveness(),
+            'total_supply_expansions': self.total_supply_expansions,
+            'cumulative_supply_expansion': self.cumulative_supply_expansion
         }
     
     def __str__(self):
-        return f"CentralBank: CBDC Outstanding=${self.cbdc_outstanding:.0f}, Adoption Rate={self.cbdc_adoption_rate:.1%}, System Health={self.banking_system_health:.2f}"
+        return f"CentralBank: CBDC Supply=${self.cbdc_supply:.0f}, Outstanding=${self.cbdc_outstanding:.0f}, Adoption Rate={self.cbdc_adoption_rate:.1%}, System Health={self.banking_system_health:.2f}"

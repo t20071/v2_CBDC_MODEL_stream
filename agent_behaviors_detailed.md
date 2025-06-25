@@ -8,8 +8,8 @@ This document provides a comprehensive list of all behaviors for each agent type
 ### Core Behavioral Functions
 
 #### 1. **CBDC Introduction (`introduce_cbdc`)**
-**Behavior**: Central bank announces CBDC availability and sets initial supply at predetermined time step.
-**Implementation**: Notifies all consumers, activates CBDC functionality, sets initial supply of 1,000,000 units.
+**Behavior**: Central bank announces CBDC availability with demand-driven supply policy at predetermined time step.
+**Implementation**: Notifies all consumers, activates CBDC functionality, starts with zero supply that expands automatically to meet demand.
 **Reference**: Meaning, J. et al. (2021). "Broadening narrow money: monetary policy with a central bank digital currency." *Bank of England Working Paper No. 724*.
 
 #### 2. **CBDC Impact Monitoring (`monitor_cbdc_impact`)**
@@ -37,10 +37,10 @@ This document provides a comprehensive list of all behaviors for each agent type
 **Implementation**: Calculates period-over-period deposit growth rates using historical data.
 **Reference**: Standard central bank monitoring practices for financial stability assessment.
 
-#### 7. **CBDC Outstanding Updates (`update_cbdc_outstanding`)**
-**Behavior**: Maintains accurate records of total CBDC in circulation across all consumer agents.
-**Implementation**: Aggregates CBDC holdings from all consumers to track money supply changes.
-**Reference**: Central bank balance sheet management principles.
+#### 7. **CBDC Supply Management (`update_cbdc_outstanding`)**
+**Behavior**: Expands CBDC supply automatically to meet all consumer demand, ensuring no supply constraints.
+**Implementation**: Monitors consumer CBDC holdings and increases supply to exactly match demand, tracks expansion metrics.
+**Reference**: Demand-responsive monetary policy and modern central bank digital currency accommodation principles.
 
 ## Commercial Bank Agent Behaviors
 

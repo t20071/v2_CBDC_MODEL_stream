@@ -46,6 +46,12 @@ This document outlines all assumptions made in the CBDC banking simulation model
 - **Rationale**: Based on current central bank CBDC initiatives
 - **Reference**: Boar, C., Holden, H., & Wadsworth, A. (2020). "Impending arrival–a sequel to the survey on central bank digital currency." *BIS Papers No. 107*.
 
+### 5. Demand-Driven CBDC Supply
+- **Assumption**: Central bank expands CBDC supply automatically to meet all consumer demand
+- **Implementation**: Supply starts at zero and increases exactly to match total consumer CBDC holdings
+- **Rationale**: Reflects central bank commitment to satisfy demand without supply constraints
+- **Reference**: Modern central bank digital currency proposals emphasize accommodation of legitimate demand
+
 ### 5. Systemic Risk Monitoring
 - **Assumption**: Central bank monitors banking system health and provides support if >30% of banks are weak
 - **Reference**: Basel Committee on Banking Supervision guidelines on systemic risk
