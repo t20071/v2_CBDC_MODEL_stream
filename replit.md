@@ -89,6 +89,7 @@ The application follows a Model-View architecture pattern:
 - **initial_conditions.md**: Detailed documentation of all initial conditions, parameter values, and empirical sources
 - **agent_interactions_mermaid.md**: Detailed Mermaid charts showing all agent interactions, network structures, and decision processes
 - **agent_behaviors_detailed.md**: Complete list of all agent behaviors with detailed explanations and academic references
+- **cbdc_hypotheses.md**: Complete framework of all hypotheses (H1, H3, H4, H6) with theoretical foundations and measurement approaches
 - **Agent Flow Chart**: Interactive visualization of agent interactions available in the simulation interface
 
 ## Changelog
@@ -110,6 +111,7 @@ Changelog:
 - June 24, 2025. Added comprehensive VS Code setup with requirements.txt and configuration files
 - June 24, 2025. Documented all model assumptions with academic references
 - June 25, 2025. Created detailed agent behavior documentation with academic references
+- June 27, 2025. Documented complete hypothesis testing framework with theoretical foundations
 ```
 
 ## User Preferences
