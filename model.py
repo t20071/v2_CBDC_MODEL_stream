@@ -290,30 +290,23 @@ class CBDCBankingModel(Model):
             return 0.0
         return total_connections / max_possible_connections
     
-    def initialize_banking_network(self):
-        """Initialize interbank network connections for H4 analysis."""
-        for bank in self.commercial_banks:
-            if bank.bank_type == "large":
-                # Large banks connect to 60% of other banks
-                connection_probability = 0.6
-            else:
-                # Small banks connect to 30% of other banks
-                connection_probability = 0.3
-            
-            # Calculate connections
-            other_banks = [b for b in self.commercial_banks if b != bank]
-            connections = len(other_banks) * connection_probability
-            bank.interbank_connections = connections
+
     
     def initialize_bank_balance_sheets(self):
         """Initialize 2025-calibrated balance sheets as starting conditions."""
         for bank in self.commercial_banks:
-            # Set initial deposits based on customer allocation
+            # Calculate actual deposits: consumers deposit 37% of their wealth
             initial_customer_deposits = 0
             for consumer in self.consumers:
                 if consumer.primary_bank == bank:
-                    initial_customer_deposits += consumer.bank_deposits
+                    # Consumer deposits 37% of their $8,400 wealth = $3,108 per consumer
+                    consumer_deposit = consumer.initial_wealth * 0.37
+                    initial_customer_deposits += consumer_deposit
+                    # Update consumer's portfolio allocation
+                    consumer.bank_deposits = consumer_deposit
+                    consumer.other_assets = consumer.initial_wealth - consumer_deposit
             
+            # Set bank's total deposits to match actual consumer deposits
             bank.total_deposits = initial_customer_deposits
             
             if bank.bank_type == "large":
@@ -358,7 +351,6 @@ class CBDCBankingModel(Model):
             
             # Calculate initial performance metrics
             bank.calculate_metrics()
-            bank.update_liquidity_coverage_ratio()
             
             # Ensure minimum regulatory compliance
             if bank.liquidity_coverage_ratio < (1.25 if bank.bank_type == "large" else 1.10):

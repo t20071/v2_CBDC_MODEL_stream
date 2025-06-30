@@ -157,15 +157,17 @@ class CommercialBank(Agent):
         # Update total loans (simplified - assumes all loans are approved)
         self.total_loans = min(loan_demand, available_for_lending)
         
-        # Update reserves
-        self.reserves = self.total_deposits - self.total_loans
+        # Update cash reserves (maintain compatibility)
+        self.reserves = self.cash_reserves  # For backward compatibility
     
     def calculate_metrics(self):
-        """Calculate key performance metrics."""
-        # Liquidity ratio
-        self.liquidity_ratio = (
-            self.reserves / self.total_deposits if self.total_deposits > 0 else 1.0
-        )
+        """Calculate 2025-calibrated key performance metrics."""
+        if self.total_deposits > 0:
+            self.liquidity_ratio = self.cash_reserves / self.total_deposits
+            self.loan_to_deposit_ratio = self.total_loans / self.total_deposits
+        else:
+            self.liquidity_ratio = 1.0
+            self.loan_to_deposit_ratio = 0.0
         
         # Loan-to-deposit ratio
         self.loan_to_deposit_ratio = (
