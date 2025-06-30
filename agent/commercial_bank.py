@@ -25,17 +25,59 @@ class CommercialBank(Agent):
         self.bank_type = bank_type  # "large" or "small_medium"
         self.network_centrality = network_centrality  # H1: Network centrality metric
         
-        # Bank balance sheet
+        # 2025-calibrated balance sheet structure
         self.capital = initial_capital
+        
+        # Balance sheet components based on 2025 banking data
+        if self.bank_type == "large":
+            # Large bank balance sheet (75% deposits, 55% loans, 15% reserves)
+            self.target_deposit_ratio = 0.75    # 75% of assets as deposits
+            self.target_loan_ratio = 0.55       # 55% of assets as loans  
+            self.target_reserve_ratio = 0.15    # 15% cash & reserves
+            self.target_securities_ratio = 0.25 # 25% securities
+            self.loan_to_deposit_target = 0.733 # 73.3% LTD ratio
+            self.net_interest_margin = 0.028    # 2.8% NIM
+            self.capital_ratio = 0.12           # 12% equity ratio
+        else:
+            # Small bank balance sheet (82% deposits, 62% loans, 12% reserves)
+            self.target_deposit_ratio = 0.82    # 82% of assets as deposits
+            self.target_loan_ratio = 0.62       # 62% of assets as loans
+            self.target_reserve_ratio = 0.12    # 12% cash & reserves  
+            self.target_securities_ratio = 0.20 # 20% securities
+            self.loan_to_deposit_target = 0.756 # 75.6% LTD ratio
+            self.net_interest_margin = 0.034    # 3.4% NIM
+            self.capital_ratio = 0.10           # 10% equity ratio
+        
+        # Initialize balance sheet items
         self.total_deposits = 0
+        self.demand_deposits = 0
+        self.time_deposits = 0
+        
         self.total_loans = 0
-        self.reserves = initial_capital * 0.2  # Keep 20% as reserves initially
+        self.consumer_loans = 0
+        self.commercial_loans = 0
+        self.real_estate_loans = 0
+        
+        self.cash_reserves = initial_capital * self.target_reserve_ratio
+        self.securities = initial_capital * self.target_securities_ratio
+        self.borrowings = 0
+        self.other_liabilities = 0
+        
         self.customers = []
         
-        # Performance metrics
-        self.liquidity_ratio = 1.0  # reserves / deposits
-        self.loan_to_deposit_ratio = 0.0
-        self.profitability = 0.0
+        # 2025-calibrated performance metrics
+        self.liquidity_ratio = 1.0  # Will be calculated dynamically
+        self.loan_to_deposit_ratio = 0.0  # Will track against target
+        self.liquidity_coverage_ratio = 1.25 if bank_type == "large" else 1.10  # Basel III LCR
+        
+        # Profitability metrics
+        self.net_interest_income = 0.0
+        self.non_interest_income = 0.0
+        self.operating_expenses = 0.0
+        self.net_income = 0.0
+        self.return_on_equity = 0.0
+        self.return_on_assets = 0.0
+        self.efficiency_ratio = 0.58 if bank_type == "large" else 0.65  # 2025 industry average
         
         # Market position
         self.market_share = 0.0
