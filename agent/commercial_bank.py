@@ -47,13 +47,15 @@ class CommercialBank(Agent):
         self.liquidity_stress_level = 0.0  # H3: Liquidity stress indicator
         self.cbdc_impact_factor = 1.0  # How much CBDC affects this bank
         
-        # H2: Small bank specific vulnerabilities
+        # H2: 2025-calibrated bank vulnerabilities
         if self.bank_type == "small_medium":
-            self.cbdc_vulnerability = 0.8  # Higher vulnerability to CBDC
-            self.customer_stickiness = 0.3  # Lower customer loyalty
+            self.cbdc_vulnerability = 0.65  # Moderate vulnerability (improved digital capabilities)
+            self.customer_stickiness = 0.45  # Relationship-based retention
+            self.digital_capability = 0.65   # Limited fintech resources
         else:
-            self.cbdc_vulnerability = 0.4  # Lower vulnerability to CBDC
-            self.customer_stickiness = 0.7  # Higher customer loyalty
+            self.cbdc_vulnerability = 0.25  # Lower vulnerability (stronger competitive position)
+            self.customer_stickiness = 0.80  # Strong brand loyalty and services
+            self.digital_capability = 0.90   # Advanced fintech integration
     
     def step(self):
         """Execute one step of bank operations."""

@@ -37,9 +37,9 @@ class CBDCBankingModel(Model):
     cbdc_introduction_step: int
     
     def __init__(self, n_consumers=200, n_commercial_banks=8, 
-                 cbdc_introduction_step=30, cbdc_adoption_rate=0.03,
-                 cbdc_attractiveness=1.5, initial_consumer_wealth=5000,
-                 bank_interest_rate=0.02, cbdc_interest_rate=0.01):
+                 cbdc_introduction_step=30, cbdc_adoption_rate=0.08,
+                 cbdc_attractiveness=2.2, initial_consumer_wealth=8400,
+                 bank_interest_rate=0.048, cbdc_interest_rate=0.045):
         
         super().__init__()
         
@@ -91,11 +91,14 @@ class CBDCBankingModel(Model):
                 initial_capital = int(total_market_capital * 0.4 / max(1, remaining_banks))  # 40% of market
                 network_centrality = 0.3  # Lower initial centrality
             
+            # 2025-calibrated lending spreads
+            lending_spread = 0.047 if bank_type == "large" else 0.057  # 4.7% vs 5.7% spread
+            
             bank = CommercialBank(
                 unique_id=i,
                 model=self,
                 interest_rate=self.bank_interest_rate,
-                lending_rate=self.bank_interest_rate + 0.03,
+                lending_rate=self.bank_interest_rate + lending_spread,
                 initial_capital=initial_capital,
                 bank_type=bank_type,
                 network_centrality=network_centrality

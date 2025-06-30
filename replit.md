@@ -112,6 +112,7 @@ Changelog:
 - June 24, 2025. Documented all model assumptions with academic references
 - June 25, 2025. Created detailed agent behavior documentation with academic references
 - June 27, 2025. Documented complete hypothesis testing framework with theoretical foundations
+- June 27, 2025. Updated initial conditions to reflect 2025 banking environment (5.25% fed funds, $8.4k wealth, higher digital adoption)
 ```
 
 ## User Preferences

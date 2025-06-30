@@ -15,8 +15,8 @@ class Consumer(Agent):
     interest rates, convenience, and social influence.
     """
     
-    def __init__(self, unique_id, model, initial_wealth=5000, 
-                 cbdc_adoption_probability=0.03, risk_aversion=0.5):
+    def __init__(self, unique_id, model, initial_wealth=8400, 
+                 cbdc_adoption_probability=0.08, risk_aversion=0.55):
         super().__init__(model)
         
         # Store agent properties
