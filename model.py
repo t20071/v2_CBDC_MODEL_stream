@@ -352,13 +352,21 @@ class CBDCBankingModel(Model):
             # Calculate initial performance metrics
             bank.calculate_metrics()
             
-            # Ensure minimum regulatory compliance
-            if bank.liquidity_coverage_ratio < (1.25 if bank.bank_type == "large" else 1.10):
-                # Increase cash reserves to meet LCR
-                additional_cash = bank.total_deposits * 0.05  # Add 5% buffer
-                bank.cash_reserves += additional_cash
-                bank.total_loans -= additional_cash  # Reduce loans to balance
-                bank.calculate_metrics()  # Recalculate
+            # Ensure minimum regulatory compliance - calculate LCR manually since method doesn't exist yet
+            hqla = bank.cash_reserves + (bank.securities * 0.85)  # High-Quality Liquid Assets
+            deposit_outflow_rate = 0.05 if bank.bank_type == "large" else 0.03
+            net_cash_outflows = bank.total_deposits * deposit_outflow_rate
+            
+            if net_cash_outflows > 0:
+                lcr = hqla / net_cash_outflows
+                target_lcr = 1.25 if bank.bank_type == "large" else 1.10
+                
+                if lcr < target_lcr:
+                    # Increase cash reserves to meet LCR
+                    additional_cash = bank.total_deposits * 0.05  # Add 5% buffer
+                    bank.cash_reserves += additional_cash
+                    bank.total_loans -= additional_cash  # Reduce loans to balance
+                    bank.calculate_metrics()  # Recalculate
     
     # H6: Central bank centrality computation
     def compute_central_bank_centrality(self):
