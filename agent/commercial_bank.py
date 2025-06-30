@@ -48,18 +48,17 @@ class CommercialBank(Agent):
             self.net_interest_margin = 0.034    # 3.4% NIM
             self.capital_ratio = 0.10           # 10% equity ratio
         
-        # Initialize balance sheet items
+        # Balance sheet will be initialized with 2025-calibrated values in initialize_bank_balance_sheets()
+        # after customer assignment determines actual deposit base
         self.total_deposits = 0
         self.demand_deposits = 0
         self.time_deposits = 0
-        
         self.total_loans = 0
         self.consumer_loans = 0
         self.commercial_loans = 0
         self.real_estate_loans = 0
-        
-        self.cash_reserves = initial_capital * self.target_reserve_ratio
-        self.securities = initial_capital * self.target_securities_ratio
+        self.cash_reserves = 0
+        self.securities = 0
         self.borrowings = 0
         self.other_liabilities = 0
         
