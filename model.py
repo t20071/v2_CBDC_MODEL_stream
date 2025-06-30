@@ -111,9 +111,6 @@ class CBDCBankingModel(Model):
             else:
                 self.small_medium_banks.append(bank)
         
-        # Initialize interbank network connections (H4)
-        self.initialize_banking_network()
-        
         # Create Consumers
         self.consumers = []
         for i in range(n_commercial_banks + 1, n_commercial_banks + n_consumers + 1):
@@ -131,6 +128,12 @@ class CBDCBankingModel(Model):
             chosen_bank = random.choice(self.commercial_banks)
             consumer.primary_bank = chosen_bank
             chosen_bank.add_customer(consumer)
+        
+        # Initialize interbank network connections (H4)
+        self.initialize_banking_network()
+        
+        # Initialize 2025-calibrated balance sheets for all banks
+        self.initialize_bank_balance_sheets()
         
         # Data collection
         self.datacollector = DataCollector(
@@ -286,6 +289,84 @@ class CBDCBankingModel(Model):
         if max_possible_connections == 0:
             return 0.0
         return total_connections / max_possible_connections
+    
+    def initialize_banking_network(self):
+        """Initialize interbank network connections for H4 analysis."""
+        for bank in self.commercial_banks:
+            if bank.bank_type == "large":
+                # Large banks connect to 60% of other banks
+                connection_probability = 0.6
+            else:
+                # Small banks connect to 30% of other banks
+                connection_probability = 0.3
+            
+            # Calculate connections
+            other_banks = [b for b in self.commercial_banks if b != bank]
+            connections = len(other_banks) * connection_probability
+            bank.interbank_connections = connections
+    
+    def initialize_bank_balance_sheets(self):
+        """Initialize 2025-calibrated balance sheets as starting conditions."""
+        for bank in self.commercial_banks:
+            # Set initial deposits based on customer allocation
+            initial_customer_deposits = 0
+            for consumer in self.consumers:
+                if consumer.primary_bank == bank:
+                    initial_customer_deposits += consumer.bank_deposits
+            
+            bank.total_deposits = initial_customer_deposits
+            
+            if bank.bank_type == "large":
+                # Large bank 2025 balance sheet structure
+                bank.demand_deposits = bank.total_deposits * 0.60  # 60% demand
+                bank.time_deposits = bank.total_deposits * 0.40    # 40% time
+                
+                # Set loan portfolio to target ratio
+                bank.total_loans = bank.total_deposits * 0.733  # 73.3% LTD ratio
+                bank.consumer_loans = bank.total_loans * 0.36   # 36% consumer
+                bank.commercial_loans = bank.total_loans * 0.45 # 45% commercial  
+                bank.real_estate_loans = bank.total_loans * 0.19 # 19% real estate
+                
+                # Adjust cash reserves to balance
+                target_assets = bank.total_deposits / 0.75  # Deposits are 75% of assets
+                bank.cash_reserves = target_assets * 0.15   # 15% cash & reserves
+                bank.securities = target_assets * 0.25      # 25% securities
+                
+                # Set borrowings and other funding
+                bank.borrowings = target_assets * 0.10      # 10% borrowings
+                bank.other_liabilities = target_assets * 0.03 # 3% other liabilities
+                
+            else:
+                # Small bank 2025 balance sheet structure  
+                bank.demand_deposits = bank.total_deposits * 0.61  # 61% demand
+                bank.time_deposits = bank.total_deposits * 0.39    # 39% time
+                
+                # Set loan portfolio to target ratio
+                bank.total_loans = bank.total_deposits * 0.756  # 75.6% LTD ratio
+                bank.consumer_loans = bank.total_loans * 0.24   # 24% consumer
+                bank.commercial_loans = bank.total_loans * 0.56 # 56% commercial
+                bank.real_estate_loans = bank.total_loans * 0.20 # 20% real estate
+                
+                # Adjust cash reserves to balance
+                target_assets = bank.total_deposits / 0.82  # Deposits are 82% of assets
+                bank.cash_reserves = target_assets * 0.12   # 12% cash & reserves
+                bank.securities = target_assets * 0.20      # 20% securities
+                
+                # Set borrowings and other funding
+                bank.borrowings = target_assets * 0.06      # 6% borrowings
+                bank.other_liabilities = target_assets * 0.02 # 2% other liabilities
+            
+            # Calculate initial performance metrics
+            bank.calculate_metrics()
+            bank.update_liquidity_coverage_ratio()
+            
+            # Ensure minimum regulatory compliance
+            if bank.liquidity_coverage_ratio < (1.25 if bank.bank_type == "large" else 1.10):
+                # Increase cash reserves to meet LCR
+                additional_cash = bank.total_deposits * 0.05  # Add 5% buffer
+                bank.cash_reserves += additional_cash
+                bank.total_loans -= additional_cash  # Reduce loans to balance
+                bank.calculate_metrics()  # Recalculate
     
     # H6: Central bank centrality computation
     def compute_central_bank_centrality(self):

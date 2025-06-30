@@ -175,3 +175,25 @@ api_banking_adoption = 0.85
 All parameters derived from current market data rather than theoretical assumptions, providing stronger validation for policy analysis and academic research applications.
 
 This calibration transforms the simulation from a generic banking model to a contemporary policy analysis tool for actual CBDC implementation decisions.
+
+## Initial Balance Sheet Implementation
+
+The model now automatically initializes banks with 2025-calibrated balance sheets at startup:
+
+### Large Banks Start With:
+- **Total Assets**: Based on 75% deposit funding ratio
+- **Deposits**: 60% demand, 40% time deposits
+- **Loans**: 73.3% of deposits (36% consumer, 45% commercial, 19% real estate)
+- **Cash & Reserves**: 15% of assets for LCR compliance
+- **Securities**: 25% of assets (government and corporate bonds)
+- **Borrowings**: 10% of assets (FHLB and fed funds)
+
+### Small Banks Start With:
+- **Total Assets**: Based on 82% deposit funding ratio
+- **Deposits**: 61% demand, 39% time deposits  
+- **Loans**: 75.6% of deposits (24% consumer, 56% commercial, 20% real estate)
+- **Cash & Reserves**: 12% of assets for adequate liquidity
+- **Securities**: 20% of assets (municipal and government focus)
+- **Borrowings**: 6% of assets (limited wholesale funding)
+
+All banks automatically meet Basel III requirements and 2025 regulatory standards at initialization.
