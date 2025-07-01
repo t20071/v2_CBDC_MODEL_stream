@@ -250,26 +250,39 @@ def display_results():
         st.subheader("CBDC Substitution Effects")
         
         # Calculate substitution metrics with proper baseline
-        # Find pre-CBDC baseline (steps before CBDC introduction)
+        # CBDC substitution should be zero before introduction
         cbdc_intro_step = params['cbdc_introduction_step']
-        pre_cbdc_data = data[data.index < cbdc_intro_step]
         
-        if len(pre_cbdc_data) > 0:
+        # Initialize substitution rate to zero
+        data['Deposit_Substitution_Rate'] = 0.0
+        
+        # Find pre-CBDC baseline (deposits just before CBDC introduction)
+        pre_cbdc_data = data[data.index < cbdc_intro_step]
+        post_cbdc_data = data[data.index >= cbdc_intro_step]
+        
+        if len(pre_cbdc_data) > 0 and len(post_cbdc_data) > 0:
             # Use average of last few steps before CBDC as baseline
             baseline_steps = min(5, len(pre_cbdc_data))
             baseline_deposits = pre_cbdc_data['Total_Bank_Deposits'].tail(baseline_steps).mean()
-        else:
-            # Fallback to first observation
-            baseline_deposits = data['Total_Bank_Deposits'].iloc[0]
+            
+            # Calculate substitution only for post-CBDC period
+            if baseline_deposits > 0:
+                post_cbdc_substitution = (baseline_deposits - post_cbdc_data['Total_Bank_Deposits']) / baseline_deposits * 100
+                data.loc[post_cbdc_data.index, 'Deposit_Substitution_Rate'] = post_cbdc_substitution
         
-        if baseline_deposits > 0:
-            data['Deposit_Substitution_Rate'] = (baseline_deposits - data['Total_Bank_Deposits']) / baseline_deposits * 100
-        else:
-            data['Deposit_Substitution_Rate'] = 0
+        # Calculate CBDC metrics - should be zero before introduction
+        data['CBDC_Growth_Rate'] = 0.0
+        data['Cumulative_CBDC_Share'] = 0.0
         
-        # Calculate CBDC growth rate and cumulative substitution
-        data['CBDC_Growth_Rate'] = data['Total_CBDC_Holdings'].pct_change().fillna(0) * 100
-        data['Cumulative_CBDC_Share'] = data['Total_CBDC_Holdings'] / (data['Total_CBDC_Holdings'] + data['Total_Bank_Deposits']) * 100
+        # Calculate CBDC growth rate only for post-introduction period
+        if len(post_cbdc_data) > 0:
+            cbdc_growth = post_cbdc_data['Total_CBDC_Holdings'].pct_change().fillna(0) * 100
+            data.loc[post_cbdc_data.index, 'CBDC_Growth_Rate'] = cbdc_growth
+            
+            # Calculate market share only where CBDC exists
+            total_financial_assets = post_cbdc_data['Total_CBDC_Holdings'] + post_cbdc_data['Total_Bank_Deposits']
+            cbdc_share = post_cbdc_data['Total_CBDC_Holdings'] / total_financial_assets * 100
+            data.loc[post_cbdc_data.index, 'Cumulative_CBDC_Share'] = cbdc_share.fillna(0)
         
         fig_sub = make_subplots(rows=3, cols=1, 
                                subplot_titles=('Deposit Substitution from 37% Baseline (%)', 
@@ -315,6 +328,13 @@ def display_results():
             showlegend=True
         )
         fig_sub.add_trace(baseline_trace, row=3, col=1)
+        
+        # Add CBDC introduction line to all subplots
+        for i in range(1, 4):
+            fig_sub.add_vline(x=cbdc_intro_step, 
+                            line_dash="dash", line_color="red", opacity=0.7,
+                            annotation_text="CBDC Launch" if i == 1 else "",
+                            row=i, col=1)
         
         fig_sub.update_layout(height=800, title_text="CBDC Substitution Analysis Over Time")
         st.plotly_chart(fig_sub, use_container_width=True)
