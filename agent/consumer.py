@@ -88,18 +88,20 @@ class Consumer(Agent):
         monthly_income = self.initial_wealth * self.income_rate
         self.wealth += monthly_income
         
-        # Allocate new income based on consumer portfolio preferences
+        # Realistic income allocation - new income goes to existing payment methods
+        # CBDC adopters choose WHERE to receive their income (direct deposit choice)
         if self.cbdc_adopter:
-            # Split income between bank, CBDC, and other assets based on preferences
-            cbdc_allocation = monthly_income * self.get_cbdc_preference()
-            bank_allocation = monthly_income * 0.37  # Maintain 37% bank allocation target
-            other_allocation = monthly_income - cbdc_allocation - bank_allocation
+            # Income can be received directly to CBDC account (like direct deposit to digital wallet)
+            cbdc_income_preference = self.get_cbdc_preference() * 0.6  # Max 60% of income to CBDC
+            direct_cbdc_income = monthly_income * cbdc_income_preference
+            bank_income = monthly_income * 0.37  # Still need some bank relationship
+            other_income = monthly_income - direct_cbdc_income - bank_income
             
-            self.cbdc_holdings += cbdc_allocation
-            self.bank_deposits += bank_allocation
-            self.other_assets += other_allocation
+            self.cbdc_holdings += direct_cbdc_income
+            self.bank_deposits += bank_income  
+            self.other_assets += other_income
         else:
-            # Non-adopters maintain 37% bank deposit allocation
+            # Non-adopters receive all income through traditional banking
             bank_allocation = monthly_income * 0.37
             other_allocation = monthly_income * 0.63
             
@@ -171,27 +173,32 @@ class Consumer(Agent):
         self.cbdc_adopter = True
         self.adoption_step = self.get_model().current_step
         
-        # Initial CBDC adoption - move substantial funds from bank to CBDC
-        initial_transfer_rate = 0.3 + (1 - self.bank_loyalty) * 0.4  # 30-70% initial transfer
-        transfer_amount = self.bank_deposits * initial_transfer_rate
+        # Realistic CBDC adoption - exchange bank deposits for CBDC through central bank
+        # No new money is created, only payment method substitution
+        initial_transfer_rate = 0.2 + (1 - self.bank_loyalty) * 0.3  # 20-50% initial exchange
+        exchange_amount = self.bank_deposits * initial_transfer_rate
         
-        # Ensure minimum meaningful transfer
-        min_transfer = min(self.bank_deposits * 0.2, self.initial_wealth * 0.15)
-        transfer_amount = max(transfer_amount, min_transfer)
+        # Minimum meaningful exchange (like opening a new digital wallet)
+        min_exchange = min(self.bank_deposits * 0.15, self.initial_wealth * 0.1)
+        exchange_amount = max(exchange_amount, min_exchange)
         
-        # Cap transfer to available deposits
-        transfer_amount = min(transfer_amount, self.bank_deposits)
+        # Cap exchange to available bank deposits
+        exchange_amount = min(exchange_amount, self.bank_deposits)
         
-        if transfer_amount > 0:
-            self.bank_deposits -= transfer_amount
-            self.cbdc_holdings += transfer_amount
+        if exchange_amount > 0:
+            # Consumer exchanges bank deposits for CBDC (1:1 exchange rate)
+            self.bank_deposits -= exchange_amount
+            self.cbdc_holdings += exchange_amount
             
-            # Update bank's total deposits immediately
+            # Track this as a payment method substitution, not new money creation
+            self.total_cbdc_exchanges = getattr(self, 'total_cbdc_exchanges', 0) + exchange_amount
+            
+            # Update bank's deposits (bank loses this deposit to central bank)
             if self.primary_bank:
                 self.primary_bank.update_deposits()
-                # Mark customer as potentially churning
-                if transfer_amount > self.initial_wealth * 0.25:
-                    self.bank_loyalty *= 0.7  # Reduce loyalty after major transfer
+                # Reduce bank loyalty after switching payment methods
+                if exchange_amount > self.initial_wealth * 0.2:
+                    self.bank_loyalty *= 0.8  # Moderate loyalty reduction
     
     def rebalance_portfolio(self):
         """Rebalance portfolio between bank deposits, CBDC, and other assets."""
