@@ -337,4 +337,4 @@ class CommercialBank(Agent):
         return strength_score
     
     def __str__(self):
-        return f"CommercialBank_{self.unique_id}: Deposits=${self.total_deposits:.0f}, Loans=${self.total_loans:.0f}, Customers={len(self.customers)}"
+        return f"CommercialBank_{self.unique_id}: Deposits={self.total_deposits:.0f}, Loans={self.total_loans:.0f}, Customers={len(self.customers)}"

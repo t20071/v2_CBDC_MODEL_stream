@@ -410,4 +410,4 @@ class Consumer(Agent):
         }
     
     def __str__(self):
-        return f"Consumer_{self.unique_id}: Wealth=${self.wealth:.0f}, Bank=${self.bank_deposits:.0f}, CBDC=${self.cbdc_holdings:.0f}, Adopter={self.cbdc_adopter}"
+        return f"Consumer_{self.unique_id}: Wealth={self.wealth:.0f}, Bank={self.bank_deposits:.0f}, CBDC={self.cbdc_holdings:.0f}, Adopter={self.cbdc_adopter}"

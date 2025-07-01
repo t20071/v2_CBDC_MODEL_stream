@@ -124,7 +124,7 @@ def display_results():
     
     with col3:
         final_cbdc_holdings = data['Total_CBDC_Holdings'].iloc[-1]
-        st.metric("Total CBDC Holdings", f"${final_cbdc_holdings:,.0f}")
+        st.metric("Total CBDC Holdings", f"{final_cbdc_holdings:,.0f}units")
     
     with col4:
         avg_bank_liquidity = data['Average_Bank_Liquidity_Ratio'].iloc[-1]
@@ -246,7 +246,7 @@ def display_results():
                         annotation_text="CBDC Launch")
     
     fig_wealth.update_layout(
-        title="Consumer Wealth Allocation Over Time (% of Total Wealth)",
+        title="Consumer Holdings Over Time (Currency Units)",
         xaxis_title="Month",
         yaxis_title="Currency Holdings (units)",
         yaxis=dict(range=[0, 100]),
@@ -521,7 +521,7 @@ def display_results():
                     pre_bank_pct = pre_period.get('bank_volume', 0) / pre_period.get('total_volume', 1) * 100
                     pre_other_pct = pre_period.get('other_volume', 0) / pre_period.get('total_volume', 1) * 100
                     
-                    st.metric("Total Transaction Volume", f"${pre_period.get('total_volume', 0):,.0f}")
+                    st.metric("Total Transaction Volume", f"{pre_period.get('total_volume', 0):,.0f}units")
                     st.metric("Bank Transactions", f"{pre_bank_pct:.1f}%")
                     st.metric("CBDC Transactions", "0.0%")
                     st.metric("Other Payment Methods", f"{pre_other_pct:.1f}%")
@@ -535,7 +535,7 @@ def display_results():
                     post_cbdc_pct = post_period.get('cbdc_volume', 0) / post_period.get('total_volume', 1) * 100
                     post_other_pct = post_period.get('other_volume', 0) / post_period.get('total_volume', 1) * 100
                     
-                    st.metric("Total Transaction Volume", f"${post_period.get('total_volume', 0):,.0f}")
+                    st.metric("Total Transaction Volume", f"{post_period.get('total_volume', 0):,.0f}units")
                     st.metric("Bank Transactions", f"{post_bank_pct:.1f}%", f"{post_bank_pct - 100:.1f}%")
                     st.metric("CBDC Transactions", f"{post_cbdc_pct:.1f}%", f"+{post_cbdc_pct:.1f}%")
                     st.metric("Other Payment Methods", f"{post_other_pct:.1f}%")
@@ -578,7 +578,7 @@ def display_results():
                 fig_transactions.update_layout(
                     title="Transaction Volume by Payment Method",
                     xaxis_title="Simulation Step",
-                    yaxis_title="Transaction Volume ($)",
+                    yaxis_title="Transaction Volume ()",
                     hovermode='x unified'
                 )
                 
@@ -646,14 +646,14 @@ def display_results():
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("CBDC Outstanding", 
-                         f"${st.session_state.model.central_bank.cbdc_outstanding:,.0f}")
+                         f"{st.session_state.model.central_bank.cbdc_outstanding:,.0f}units")
             with col2:
                 st.metric("Central Bank Deposits", 
-                         f"${st.session_state.model.central_bank.central_bank_deposits:,.0f}")
+                         f"{st.session_state.model.central_bank.central_bank_deposits:,.0f}units")
             with col3:
                 exchange_balance = st.session_state.model.central_bank.cbdc_outstanding - st.session_state.model.central_bank.central_bank_deposits
                 st.metric("Exchange Balance", 
-                         f"${exchange_balance:,.0f}",
+                         f"{exchange_balance:,.0f}units",
                          "✓ Balanced" if abs(exchange_balance) < 1 else "⚠ Imbalanced")
             
             st.info("💡 The 1:1 exchange mechanism ensures no new money is created. CBDC is issued only when commercial banks transfer equivalent deposits to the central bank.")

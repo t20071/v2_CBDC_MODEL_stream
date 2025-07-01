@@ -329,7 +329,7 @@ class CBDCBankingModel(Model):
             initial_customer_deposits = 0
             for consumer in self.consumers:
                 if consumer.primary_bank == bank:
-                    # Consumer deposits 37% of their $8,400 wealth = $3,108 per consumer
+                    # Consumer deposits 37% of their 8,400 wealth = 3,108 per consumer
                     consumer_deposit = consumer.initial_wealth * 0.37
                     initial_customer_deposits += consumer_deposit
                     # Update consumer's portfolio allocation

@@ -191,9 +191,9 @@ class CentralBank(Agent):
             # Notify commercial banks to transfer deposits to central bank
             self.collect_deposits_for_cbdc_exchange(new_cbdc_needed)
             
-            print(f"Central Bank issued ${new_cbdc_needed:,.0f} CBDC through 1:1 exchange")
-            print(f"Total CBDC outstanding: ${self.cbdc_outstanding:,.0f}")
-            print(f"Central Bank deposits from exchanges: ${self.central_bank_deposits:,.0f}")
+            print(f"Central Bank issued {new_cbdc_needed:,.0f}units CBDC through 1:1 exchange")
+            print(f"Total CBDC outstanding: {self.cbdc_outstanding:,.0f}units")
+            print(f"Central Bank deposits from exchanges: {self.central_bank_deposits:,.0f}units")
     
     def collect_deposits_for_cbdc_exchange(self, exchange_amount):
         """Collect deposits from commercial banks for CBDC exchanges."""
@@ -246,4 +246,4 @@ class CentralBank(Agent):
         }
     
     def __str__(self):
-        return f"CentralBank: CBDC Supply=${self.cbdc_supply:.0f}, Outstanding=${self.cbdc_outstanding:.0f}, Adoption Rate={self.cbdc_adoption_rate:.1%}, System Health={self.banking_system_health:.2f}"
+        return f"CentralBank: CBDC Supply={self.cbdc_supply:.0f}, Outstanding={self.cbdc_outstanding:.0f}, Adoption Rate={self.cbdc_adoption_rate:.1%}, System Health={self.banking_system_health:.2f}"
