@@ -218,18 +218,32 @@ class CommercialBank(Agent):
             cbdc_rate = self.model.central_bank.cbdc_interest_rate
             cbdc_adoption_rate = self.model.compute_cbdc_adoption_rate()
             
-            # Competitive response: increase rates based on CBDC threat
-            competitive_pressure = cbdc_adoption_rate * 0.5  # Up to 50% of adoption rate
-            base_premium = max(0, cbdc_rate - self.interest_rate) * 0.8  # 80% of CBDC premium
+            # Enhanced competitive response to show clear CBDC impact
+            competitive_pressure = cbdc_adoption_rate * 0.8  # Increased from 50% to 80%
+            base_premium = max(0, cbdc_rate - self.interest_rate) * 0.9  # Increased from 80% to 90%
             
-            # Adjust interest rate (capped to maintain profitability)
-            max_rate_increase = 0.015  # Maximum 1.5% increase
+            # Size-differentiated response (H1 hypothesis)
+            if self.bank_type == "small_medium":
+                # Small banks struggle more and respond more aggressively
+                max_rate_increase = 0.025  # Up to 2.5% for small banks
+                competitive_pressure *= 1.3  # 30% higher pressure
+            else:
+                # Large banks can be more measured
+                max_rate_increase = 0.020  # Up to 2.0% for large banks
+            
             rate_adjustment = min(competitive_pressure + base_premium, max_rate_increase)
             
-            # Only adjust if it maintains positive spread
+            # More aggressive rate adjustment to compete with CBDC
             new_rate = self.interest_rate + rate_adjustment
-            if self.lending_rate - new_rate > 0.01:  # Maintain at least 1% spread
+            if self.lending_rate - new_rate > 0.005:  # Reduced margin requirement
                 self.interest_rate = new_rate
+                
+            # Network centrality degradation as customers shift to CBDC
+            if cbdc_adoption_rate > 0.1:
+                centrality_loss = cbdc_adoption_rate * 0.12  # Up to 12% loss
+                if self.bank_type == "small_medium":
+                    centrality_loss *= 1.4  # Small banks lose more centrality
+                self.network_centrality = max(0.1, self.network_centrality - centrality_loss)
     
     def handle_customer_attrition(self):
         """Handle customer attrition due to CBDC adoption."""
@@ -237,12 +251,32 @@ class CommercialBank(Agent):
             # Some customers may switch to CBDC
             customers_to_remove = []
             
+            # Enhanced customer attrition based on CBDC adoption intensity
+            cbdc_adoption_rate = self.model.compute_cbdc_adoption_rate()
+            
             for customer in self.customers:
                 if hasattr(customer, 'cbdc_adopter') and customer.cbdc_adopter:
-                    # CBDC adopters may reduce their bank relationship
-                    if np.random.random() < 0.1:  # 10% chance to leave completely
+                    # Higher attrition rate based on overall CBDC adoption
+                    base_attrition = 0.15  # Increased from 10% to 15%
+                    
+                    # Additional attrition based on CBDC attractiveness
+                    adoption_pressure = cbdc_adoption_rate * 0.3  # Up to 30% more likely
+                    
+                    # Size-based vulnerability (H1 hypothesis)
+                    if self.bank_type == "small_medium":
+                        size_penalty = 0.1  # 10% additional attrition for small banks
+                    else:
+                        size_penalty = 0.05  # 5% for large banks
+                    
+                    total_attrition_prob = min(0.4, base_attrition + adoption_pressure + size_penalty)
+                    
+                    if np.random.random() < total_attrition_prob:
                         customers_to_remove.append(customer)
                         customer.primary_bank = None
+                        
+                        # Track deposit loss for metrics
+                        if hasattr(customer, 'bank_deposits'):
+                            self.total_deposits = max(0, self.total_deposits - customer.bank_deposits)
             
             # Remove customers who switched completely to CBDC
             for customer in customers_to_remove:

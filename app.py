@@ -124,7 +124,7 @@ def display_results():
     
     with col3:
         final_cbdc_holdings = data['Total_CBDC_Holdings'].iloc[-1]
-        st.metric("Total CBDC Holdings", f"{final_cbdc_holdings:,.0f}units")
+        st.metric("Total CBDC Holdings", f"{final_cbdc_holdings:,.0f} units")
     
     with col4:
         avg_bank_liquidity = data['Average_Bank_Liquidity_Ratio'].iloc[-1]
@@ -521,7 +521,7 @@ def display_results():
                     pre_bank_pct = pre_period.get('bank_volume', 0) / pre_period.get('total_volume', 1) * 100
                     pre_other_pct = pre_period.get('other_volume', 0) / pre_period.get('total_volume', 1) * 100
                     
-                    st.metric("Total Transaction Volume", f"{pre_period.get('total_volume', 0):,.0f}units")
+                    st.metric("Total Transaction Volume", f"{pre_period.get('total_volume', 0):,.0f} units")
                     st.metric("Bank Transactions", f"{pre_bank_pct:.1f}%")
                     st.metric("CBDC Transactions", "0.0%")
                     st.metric("Other Payment Methods", f"{pre_other_pct:.1f}%")
@@ -535,7 +535,7 @@ def display_results():
                     post_cbdc_pct = post_period.get('cbdc_volume', 0) / post_period.get('total_volume', 1) * 100
                     post_other_pct = post_period.get('other_volume', 0) / post_period.get('total_volume', 1) * 100
                     
-                    st.metric("Total Transaction Volume", f"{post_period.get('total_volume', 0):,.0f}units")
+                    st.metric("Total Transaction Volume", f"{post_period.get('total_volume', 0):,.0f} units")
                     st.metric("Bank Transactions", f"{post_bank_pct:.1f}%", f"{post_bank_pct - 100:.1f}%")
                     st.metric("CBDC Transactions", f"{post_cbdc_pct:.1f}%", f"+{post_cbdc_pct:.1f}%")
                     st.metric("Other Payment Methods", f"{post_other_pct:.1f}%")
@@ -646,7 +646,7 @@ def display_results():
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("CBDC Outstanding", 
-                         f"{st.session_state.model.central_bank.cbdc_outstanding:,.0f}units")
+                         f"{st.session_state.model.central_bank.cbdc_outstanding:,.0f} units")
             with col2:
                 st.metric("Central Bank Deposits", 
                          f"{st.session_state.model.central_bank.central_bank_deposits:,.0f}units")
