@@ -242,8 +242,13 @@ def display_results():
     
     # Create tabs for different analyses
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-        "CBDC Substitution", "H1: Network Centrality", "H3: Liquidity Stress", 
-        "H4: Network Connectivity", "H6: Central Bank Dominance", "Agent Flow Chart"
+        "CBDC Substitution", 
+        "H1: Network Centrality", 
+        "H3: Liquidity Stress", 
+        "H4: Network Connectivity", 
+        "H6: Central Bank Dominance",
+        "Transaction Analysis",
+        "Agent Flow Chart"
     ])
     
     with tab1:
@@ -472,12 +477,12 @@ def display_results():
             avg_density_post_cbdc = data[data.index >= params['cbdc_introduction_step']]['Banking_Network_Density'].mean()
             st.metric("Avg Density Post-CBDC", f"{avg_density_post_cbdc:.3f}")
     
-    with tab5:
+    with tab6:
         st.subheader("Consumer-to-Consumer Transaction Analysis")
         st.write("Analysis of payment method usage before and after CBDC introduction")
         
         # Get transaction analysis
-        transaction_analysis = model.get_transaction_analysis()
+        transaction_analysis = st.session_state.model.get_transaction_analysis()
         
         if transaction_analysis:
             pre_period = transaction_analysis.get('pre_cbdc_period', {})
@@ -614,16 +619,16 @@ def display_results():
         # CBDC Exchange Mechanism
         st.subheader("CBDC Exchange Mechanism (1:1 Ratio)")
         
-        if hasattr(model.central_bank, 'central_bank_deposits'):
+        if hasattr(st.session_state.model.central_bank, 'central_bank_deposits'):
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("CBDC Outstanding", 
-                         f"${model.central_bank.cbdc_outstanding:,.0f}")
+                         f"${st.session_state.model.central_bank.cbdc_outstanding:,.0f}")
             with col2:
                 st.metric("Central Bank Deposits", 
-                         f"${model.central_bank.central_bank_deposits:,.0f}")
+                         f"${st.session_state.model.central_bank.central_bank_deposits:,.0f}")
             with col3:
-                exchange_balance = model.central_bank.cbdc_outstanding - model.central_bank.central_bank_deposits
+                exchange_balance = st.session_state.model.central_bank.cbdc_outstanding - st.session_state.model.central_bank.central_bank_deposits
                 st.metric("Exchange Balance", 
                          f"${exchange_balance:,.0f}",
                          "✓ Balanced" if abs(exchange_balance) < 1 else "⚠ Imbalanced")
@@ -634,7 +639,7 @@ def display_results():
         st.subheader("Commercial Bank CBDC Outflows")
         
         bank_outflow_data = []
-        for bank in model.commercial_banks:
+        for bank in st.session_state.model.commercial_banks:
             if hasattr(bank, 'cbdc_related_outflows'):
                 bank_outflow_data.append({
                     'Bank ID': f"Bank {bank.unique_id}",
@@ -651,7 +656,7 @@ def display_results():
         else:
             st.info("No CBDC-related outflows recorded yet")
 
-    with tab6:
+    with tab7:
         st.subheader("H6: Central Bank Network Dominance")
         st.write("Testing hypothesis: Central bank becomes dominant network node with CBDC")
         
