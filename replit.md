@@ -115,6 +115,9 @@ Changelog:
 - June 27, 2025. Updated initial conditions to reflect 2025 banking environment (5.25% fed funds, $8.4k wealth, higher digital adoption)
 - June 27, 2025. Implemented 2025-calibrated bank balance sheets as initial conditions (Basel III compliance, realistic asset/liability structure)
 - June 30, 2025. Clarified balance sheet initialization process: banks start with zero values, then get realistic 2025-calibrated portfolios after customer assignment in initialize_bank_balance_sheets()
+- July 1, 2025. Aligned simulation with academic research on CBDC disintermediation (Fernández-Villaverde et al. 2021, Chiu et al. 2023, Keister & Sanches 2023)
+- July 1, 2025. Updated CBDC adoption rate to 15%, CBDC rate to 5.2%, enhanced network effects based on empirical findings
+- July 1, 2025. Created comprehensive research calibration documentation with 9+ academic references for authenticity
 ```
 
 ## User Preferences
