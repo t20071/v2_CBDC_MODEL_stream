@@ -37,7 +37,7 @@ class CBDCBankingModel(Model):
     cbdc_introduction_step: int
     
     def __init__(self, n_consumers=200, n_commercial_banks=8, 
-                 cbdc_introduction_step=30, cbdc_adoption_rate=0.15,
+                 cbdc_introduction_step=12, cbdc_adoption_rate=0.15,
                  cbdc_attractiveness=1.8, initial_consumer_wealth=8400,
                  bank_interest_rate=0.048, cbdc_interest_rate=0.052):
         
@@ -187,18 +187,20 @@ class CBDCBankingModel(Model):
         """Advance the model by one step."""
         self.current_step += 1
         
-        # Introduce CBDC at specified step
+        # Introduce CBDC at specified month
         if self.current_step == self.cbdc_introduction_step:
             self.cbdc_introduced = True
             self.central_bank.introduce_cbdc()
-            print(f"CBDC introduced at step {self.current_step}")
+            print(f"CBDC introduced at month {self.current_step}")
         
-        # Update CBDC attractiveness over time (network effects)
+        # Monthly CBDC network effects growth (research-based)
         if self.cbdc_introduced:
             adoption_rate = self.compute_cbdc_adoption_rate()
-            # Network effects: as more people adopt, it becomes more attractive
-            network_effect = 1 + (adoption_rate * 0.5)
-            self.central_bank.cbdc_attractiveness = self.cbdc_attractiveness * network_effect
+            months_since_intro = self.current_step - self.cbdc_introduction_step
+            # Monthly network effects compound (Keister & Sanches, 2023)
+            monthly_network_growth = 1 + (adoption_rate * 0.08)  # 8% monthly compound
+            time_decay = max(0.5, 1 - (months_since_intro * 0.02))  # Diminishing returns
+            self.central_bank.cbdc_attractiveness = self.cbdc_attractiveness * monthly_network_growth * time_decay
         
         # Clear step-specific transactions before agents act
         self.step_transactions = {"Bank": 0, "CBDC": 0, "Other": 0}

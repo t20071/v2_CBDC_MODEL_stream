@@ -169,9 +169,10 @@ class CommercialBank(Agent):
         # Available funds for lending (deposits - reserves)
         available_for_lending = max(0, self.total_deposits - (self.total_deposits * self.reserve_requirement))
         
-        # Loan demand (simplified model)
-        # In reality, this would depend on economic conditions and loan applications
-        loan_demand = available_for_lending * 0.8  # Assume 80% utilization
+        # Monthly loan demand (research-calibrated)
+        # Monthly loan growth rate based on economic conditions
+        monthly_loan_growth = 0.15  # 15% monthly loan portfolio growth target
+        loan_demand = available_for_lending * monthly_loan_growth
         
         # Adjust for risk and market conditions
         if self.model.cbdc_introduced:

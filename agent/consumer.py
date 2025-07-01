@@ -108,9 +108,9 @@ class Consumer(Agent):
             self.bank_deposits += bank_allocation
             self.other_assets += other_allocation
         
-        # Consumer-to-consumer transactions (daily spending through transfers)
-        monthly_spending = self.wealth * self.spending_rate
-        self.execute_daily_transactions(monthly_spending)
+        # Monthly consumer-to-consumer transactions (research-based volume)
+        monthly_spending = self.wealth * self.spending_rate  # 12% monthly spending
+        self.execute_monthly_transactions(monthly_spending)
         
         # Reduce wealth by spending amount
         self.wealth -= monthly_spending
@@ -269,9 +269,9 @@ class Consumer(Agent):
         # Behavioral learning curve (Andolfatto, 2021 - network effects)
         if hasattr(self, 'adoption_step') and self.adoption_step is not None:
             model = self.get_model()
-            steps_since_adoption = model.current_step - self.adoption_step
-            # S-curve adoption pattern with network effects
-            time_growth = min(0.35, steps_since_adoption * 0.018)  # Up to 35% growth over time
+            months_since_adoption = model.current_step - self.adoption_step
+            # S-curve adoption pattern over months - gradual buildup
+            time_growth = min(0.35, months_since_adoption * 0.045)  # Up to 35% growth over 8 months
             base_preference += time_growth
         
         # Interest rate differential impact (stronger effect)
@@ -328,8 +328,8 @@ class Consumer(Agent):
             return total_cbdc / total_wealth
         return 0.0
     
-    def execute_daily_transactions(self, total_spending):
-        """Execute daily consumer-to-consumer transactions using preferred payment methods."""
+    def execute_monthly_transactions(self, total_spending):
+        """Execute monthly consumer-to-consumer transactions using preferred payment methods."""
         if total_spending <= 0:
             return
         
