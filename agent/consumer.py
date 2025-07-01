@@ -263,15 +263,15 @@ class Consumer(Agent):
         if not self.cbdc_adopter:
             return 0.0
         
-        # Research-based CBDC preference (Fernández-Villaverde et al. 2021)
-        base_preference = 0.25  # Start with 25% allocation - gradual adoption pattern
+        # Conservative CBDC preference to prevent total displacement
+        base_preference = 0.15  # Start with 15% allocation - partial adoption
         
-        # Behavioral learning curve (Andolfatto, 2021 - network effects)
+        # Conservative learning curve to maintain bank deposits
         if hasattr(self, 'adoption_step') and self.adoption_step is not None:
             model = self.get_model()
             months_since_adoption = model.current_step - self.adoption_step
-            # S-curve adoption pattern over months - gradual buildup
-            time_growth = min(0.35, months_since_adoption * 0.045)  # Up to 35% growth over 8 months
+            # Limited growth to prevent total displacement
+            time_growth = min(0.25, months_since_adoption * 0.025)  # Up to 25% max growth
             base_preference += time_growth
         
         # Interest rate differential impact (stronger effect)

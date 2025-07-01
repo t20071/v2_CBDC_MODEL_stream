@@ -19,18 +19,7 @@ def main():
     
     st.info("⏱️ **Temporal Framework**: Each simulation step represents **1 month** of economic activity")
     
-    # Add research credentials
-    with st.expander("📚 Academic Foundation"):
-        st.markdown("""
-        **Research-Calibrated Model** based on peer-reviewed studies:
-        - **Fernández-Villaverde et al. (2021)** - CBDC adoption patterns
-        - **Chiu et al. (2023)** - Bank disintermediation severity 
-        - **Keister & Sanches (2023)** - Network effects in digital currency
-        - **Bindseil & Pantelopoulos (2022)** - Small vs large bank differential impacts
-        - **Davoodalhosseini (2022)** - Systemic liquidity stress transmission
-        
-        See `cbdc_research_calibration.md` for complete academic references and parameter justification.
-        """)
+
     
     # Research-calibrated sidebar parameters
     st.sidebar.header("📊 Simulation Parameters")
