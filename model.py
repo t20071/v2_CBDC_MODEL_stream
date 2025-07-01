@@ -139,6 +139,7 @@ class CBDCBankingModel(Model):
         self.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
         self.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
         self.monthly_transactions = {}
+        self.step_transactions = {"Bank": 0, "CBDC": 0, "Other": 0}
         
         # Data collection
         self.datacollector = DataCollector(
@@ -199,15 +200,31 @@ class CBDCBankingModel(Model):
             network_effect = 1 + (adoption_rate * 0.5)
             self.central_bank.cbdc_attractiveness = self.cbdc_attractiveness * network_effect
         
+        # Clear step-specific transactions before agents act
+        self.step_transactions = {"Bank": 0, "CBDC": 0, "Other": 0}
+        
         # Execute agent steps
         for agent in self.all_agents:
             agent.step()
+        
+        # Record monthly transactions
+        self.monthly_transactions[self.current_step] = self.step_transactions.copy()
         
         # Market dynamics: banks adjust interest rates based on deposit outflows
         self.adjust_market_conditions()
         
         # Collect data
         self.datacollector.collect(self)
+    
+    def record_transaction(self, amount, payment_method):
+        """Record a transaction with its payment method for analysis."""
+        if payment_method in self.step_transactions:
+            self.step_transactions[payment_method] += amount
+        
+        # Also update running totals
+        if payment_method in self.transaction_volumes:
+            self.transaction_volumes[payment_method] += amount
+            self.transaction_counts[payment_method] += 1
     
     def adjust_market_conditions(self):
         """Adjust market conditions based on current state."""
