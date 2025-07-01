@@ -91,10 +91,10 @@ class Consumer(Agent):
         # Realistic income allocation - new income goes to existing payment methods
         # CBDC adopters choose WHERE to receive their income (direct deposit choice)
         if self.cbdc_adopter:
-            # Income can be received directly to CBDC account (like direct deposit to digital wallet)
-            cbdc_income_preference = self.get_cbdc_preference() * 0.6  # Max 60% of income to CBDC
+            # Conservative CBDC income allocation to maintain banks
+            cbdc_income_preference = self.get_cbdc_preference() * 0.3  # Max 30% of income to CBDC
             direct_cbdc_income = monthly_income * cbdc_income_preference
-            bank_income = monthly_income * 0.37  # Still need some bank relationship
+            bank_income = monthly_income * 0.45  # Ensure strong bank relationship
             other_income = monthly_income - direct_cbdc_income - bank_income
             
             self.cbdc_holdings += direct_cbdc_income
@@ -312,8 +312,8 @@ class Consumer(Agent):
         social_adjustment = self.social_influence_weight * peer_cbdc_usage * 0.4  # Increased
         base_preference += social_adjustment
         
-        # Higher maximum allocation to CBDC
-        return max(0.0, min(0.9, base_preference))  # Up to 90% in CBDC
+        # Conservative maximum allocation to maintain banking sector
+        return max(0.0, min(0.4, base_preference))  # Up to 40% in CBDC to prevent displacement
     
     def get_peer_adoption_rate(self):
         """Get CBDC adoption rate among peers (simplified as overall adoption rate)."""

@@ -241,7 +241,7 @@ def display_results():
     ))
     
     # Add CBDC introduction line
-    fig_wealth.add_vline(x=params['cbdc_introduction_step'], 
+    fig_wealth.add_vline(x=params['cbdc_introduction_month'], 
                         line_dash="dash", line_color="red",
                         annotation_text="CBDC Launch")
     
@@ -371,7 +371,7 @@ def display_results():
             final_cbdc_share = data['Cumulative_CBDC_Share'].iloc[-1]
             st.metric("Final CBDC Market Share", f"{final_cbdc_share:.1f}%")
         with col3:
-            cbdc_introduction = params['cbdc_introduction_step']
+            cbdc_introduction = params['cbdc_introduction_month']
             st.metric("CBDC Introduction Step", cbdc_introduction)
     
     with tab2:
@@ -492,7 +492,7 @@ def display_results():
             density_decline = ((initial_density - final_density) / initial_density) * 100 if initial_density > 0 else 0
             st.metric("Network Density Decline", f"{density_decline:.1f}%")
         with col2:
-            avg_density_post_cbdc = data[data.index >= params['cbdc_introduction_step']]['Banking_Network_Density'].mean()
+            avg_density_post_cbdc = data[data.index >= params['cbdc_introduction_month']]['Banking_Network_Density'].mean()
             st.metric("Avg Density Post-CBDC", f"{avg_density_post_cbdc:.3f}")
     
     with tab6:
@@ -571,7 +571,7 @@ def display_results():
                 )
                 
                 # Add CBDC introduction line
-                cbdc_intro_step = transaction_analysis.get('cbdc_introduction_step', 30)
+                cbdc_intro_step = transaction_analysis.get('cbdc_introduction_month', 12)
                 fig_transactions.add_vline(x=cbdc_intro_step, line_dash="dash", line_color="red",
                                          annotation_text="CBDC Launch")
                 
