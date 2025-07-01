@@ -88,17 +88,23 @@ class Consumer(Agent):
         monthly_income = self.initial_wealth * self.income_rate
         self.wealth += monthly_income
         
-        # Allocate new income
+        # Allocate new income based on consumer portfolio preferences
         if self.cbdc_adopter:
-            # Split between bank and CBDC based on preferences
+            # Split income between bank, CBDC, and other assets based on preferences
             cbdc_allocation = monthly_income * self.get_cbdc_preference()
-            bank_allocation = monthly_income - cbdc_allocation
+            bank_allocation = monthly_income * 0.37  # Maintain 37% bank allocation target
+            other_allocation = monthly_income - cbdc_allocation - bank_allocation
             
             self.cbdc_holdings += cbdc_allocation
             self.bank_deposits += bank_allocation
+            self.other_assets += other_allocation
         else:
-            # All income goes to bank account
-            self.bank_deposits += monthly_income
+            # Non-adopters maintain 37% bank deposit allocation
+            bank_allocation = monthly_income * 0.37
+            other_allocation = monthly_income * 0.63
+            
+            self.bank_deposits += bank_allocation
+            self.other_assets += other_allocation
         
         # Spending (reduces holdings proportionally)
         monthly_spending = self.wealth * self.spending_rate
@@ -107,6 +113,7 @@ class Consumer(Agent):
         if spending_ratio > 0:
             self.bank_deposits *= (1 - spending_ratio)
             self.cbdc_holdings *= (1 - spending_ratio)
+            self.other_assets *= (1 - spending_ratio)
             self.wealth -= monthly_spending
     
     def consider_cbdc_adoption(self):
