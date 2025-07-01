@@ -96,10 +96,13 @@ def display_results():
         initial_deposits = data['Total_Bank_Deposits'].iloc[0]
         final_deposits = data['Total_Bank_Deposits'].iloc[-1]
         if initial_deposits > 0:
-            deposit_reduction = (1 - final_deposits / initial_deposits) * 100
+            deposit_change = ((final_deposits - initial_deposits) / initial_deposits) * 100
+            if deposit_change >= 0:
+                st.metric("Deposit Growth", f"+{deposit_change:.1f}%")
+            else:
+                st.metric("Deposit Reduction", f"{deposit_change:.1f}%")
         else:
-            deposit_reduction = 0
-        st.metric("Deposit Reduction", f"{deposit_reduction:.1f}%")
+            st.metric("Deposit Change", "N/A")
     
     with col3:
         final_cbdc_holdings = data['Total_CBDC_Holdings'].iloc[-1]
