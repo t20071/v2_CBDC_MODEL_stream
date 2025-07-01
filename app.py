@@ -14,40 +14,26 @@ def main():
         layout="wide"
     )
     
-    st.title("📊 CBDC Banking Simulation")
-    st.write("**Monthly-Scale Academic Agent-Based Model** simulating Central Bank Digital Currency impact on commercial banking disintermediation")
+    st.title("🏦 CBDC Impact on Commercial Banking Intermediation")
+    st.markdown("An agent-based simulation using Mesa framework to model how Central Bank Digital Currency affects commercial banking operations.")
     
-    st.info("⏱️ **Temporal Framework**: Each simulation step represents **1 month** of economic activity")
+    # Sidebar for simulation parameters
+    st.sidebar.header("Simulation Parameters")
     
-
-    
-    # Research-calibrated sidebar parameters
-    st.sidebar.header("📊 Simulation Parameters")
-    st.sidebar.info("🎓 Parameters based on academic research")
-    
-    # Model size parameters
+    # Model parameters
     n_consumers = st.sidebar.slider("Number of Consumers", 50, 500, 200, 25)
     n_commercial_banks = st.sidebar.slider("Number of Commercial Banks", 3, 15, 8, 1)
-    steps = st.sidebar.slider("Simulation Months", 24, 120, 60, 6, 
-                            help="Each step = 1 month (24-120 months = 2-10 years)")
+    steps = st.sidebar.slider("Simulation Steps", 50, 500, 200, 25)
     
-    # Research-based CBDC parameters  
-    st.sidebar.subheader("🏦 CBDC Parameters")
-    cbdc_introduction_step = st.sidebar.slider("CBDC Introduction Month", 6, 36, 12, 3,
-                                             help="Month when CBDC launches (6-36 months)")
-    cbdc_adoption_rate = st.sidebar.slider("CBDC Adoption Rate", 0.05, 0.25, 0.15, 0.01,
-                                         help="Research range: 15-25% (Fernández-Villaverde et al.)")
-    cbdc_attractiveness = st.sidebar.slider("CBDC Attractiveness Factor", 1.0, 2.5, 1.8, 0.1,
-                                          help="Moderate competitiveness (Chiu et al.)")
+    # CBDC parameters
+    cbdc_introduction_step = st.sidebar.slider("CBDC Introduction Step", 10, 100, 30, 5)
+    cbdc_adoption_rate = st.sidebar.slider("CBDC Adoption Rate", 0.01, 0.1, 0.03, 0.01)
+    cbdc_attractiveness = st.sidebar.slider("CBDC Attractiveness Factor", 1.0, 3.0, 1.5, 0.1)
     
-    # Economic parameters with research backing
-    st.sidebar.subheader("💰 Economic Environment")
-    initial_consumer_wealth = st.sidebar.slider("Initial Consumer Wealth", 5000, 15000, 8400, 100,
-                                               help="2025 US median financial assets")
-    bank_interest_rate = st.sidebar.slider("Bank Interest Rate (%)", 3.0, 6.0, 4.8, 0.1,
-                                         help="2025 deposit rates") / 100
-    cbdc_interest_rate = st.sidebar.slider("CBDC Interest Rate (%)", 3.5, 6.5, 5.2, 0.1,
-                                         help="Competitive CBDC rate (+40bp advantage)") / 100
+    # Economic parameters
+    initial_consumer_wealth = st.sidebar.slider("Initial Consumer Wealth", 1000, 10000, 5000, 500)
+    bank_interest_rate = st.sidebar.slider("Bank Interest Rate (%)", 0.5, 5.0, 2.0, 0.1) / 100
+    cbdc_interest_rate = st.sidebar.slider("CBDC Interest Rate (%)", 0.0, 3.0, 1.0, 0.1) / 100
     
     # Run simulation button
     if st.sidebar.button("Run Simulation", type="primary"):
@@ -64,13 +50,9 @@ def main():
                 cbdc_interest_rate=cbdc_interest_rate
             )
             
-            # Run monthly simulation
-            progress_bar = st.progress(0)
-            for month in range(steps):
+            # Run simulation
+            for i in range(steps):
                 model.step()
-                # Update progress every 5 months
-                if month % 5 == 0:
-                    progress_bar.progress((month + 1) / steps)
             
             # Store results in session state
             st.session_state['simulation_data'] = model.datacollector.get_model_vars_dataframe()
@@ -79,8 +61,8 @@ def main():
             st.session_state['model_params'] = {
                 'n_consumers': n_consumers,
                 'n_commercial_banks': n_commercial_banks,
-                'simulation_months': steps,
-                'cbdc_introduction_month': cbdc_introduction_step,  
+                'steps': steps,
+                'cbdc_introduction_step': cbdc_introduction_step,
                 'cbdc_adoption_rate': cbdc_adoption_rate,
                 'cbdc_attractiveness': cbdc_attractiveness,
                 'initial_consumer_wealth': initial_consumer_wealth,
@@ -88,7 +70,7 @@ def main():
                 'cbdc_interest_rate': cbdc_interest_rate * 100
             }
         
-        st.success(f"Monthly simulation completed! Analyzed {steps} months of CBDC disintermediation effects.")
+        st.success("Simulation completed successfully!")
     
     # Display results if simulation has been run
     if 'simulation_data' in st.session_state:
@@ -124,7 +106,7 @@ def display_results():
     
     with col3:
         final_cbdc_holdings = data['Total_CBDC_Holdings'].iloc[-1]
-        st.metric("Total CBDC Holdings", f"{final_cbdc_holdings:,.0f} units")
+        st.metric("Total CBDC Holdings", f"${final_cbdc_holdings:,.0f}")
     
     with col4:
         avg_bank_liquidity = data['Average_Bank_Liquidity_Ratio'].iloc[-1]
@@ -241,14 +223,14 @@ def display_results():
     ))
     
     # Add CBDC introduction line
-    fig_wealth.add_vline(x=params['cbdc_introduction_month'], 
+    fig_wealth.add_vline(x=params['cbdc_introduction_step'], 
                         line_dash="dash", line_color="red",
                         annotation_text="CBDC Launch")
     
     fig_wealth.update_layout(
-        title="Consumer Holdings Over Time (Currency Units)",
-        xaxis_title="Month",
-        yaxis_title="Currency Holdings (units)",
+        title="Consumer Wealth Allocation Over Time (% of Total Wealth)",
+        xaxis_title="Simulation Step",
+        yaxis_title="Percentage of Total Consumer Wealth",
         yaxis=dict(range=[0, 100]),
         height=500
     )
@@ -259,14 +241,9 @@ def display_results():
     st.header("📊 Detailed Time Series Analysis")
     
     # Create tabs for different analyses
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-        "CBDC Substitution", 
-        "H1: Network Centrality", 
-        "H3: Liquidity Stress", 
-        "H4: Network Connectivity", 
-        "H6: Central Bank Dominance",
-        "Transaction Analysis",
-        "Agent Flow Chart"
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "CBDC Substitution", "H1: Network Centrality", "H3: Liquidity Stress", 
+        "H4: Network Connectivity", "H6: Central Bank Dominance", "Agent Flow Chart"
     ])
     
     with tab1:
@@ -274,7 +251,7 @@ def display_results():
         
         # Calculate substitution metrics with proper baseline
         # CBDC substitution should be zero before introduction
-        cbdc_intro_step = params['cbdc_introduction_month']
+        cbdc_intro_step = params['cbdc_introduction_step']
         
         # Initialize substitution rate to zero
         data['Deposit_Substitution_Rate'] = 0.0
@@ -371,7 +348,7 @@ def display_results():
             final_cbdc_share = data['Cumulative_CBDC_Share'].iloc[-1]
             st.metric("Final CBDC Market Share", f"{final_cbdc_share:.1f}%")
         with col3:
-            cbdc_introduction = params['cbdc_introduction_month']
+            cbdc_introduction = params['cbdc_introduction_step']
             st.metric("CBDC Introduction Step", cbdc_introduction)
     
     with tab2:
@@ -492,197 +469,10 @@ def display_results():
             density_decline = ((initial_density - final_density) / initial_density) * 100 if initial_density > 0 else 0
             st.metric("Network Density Decline", f"{density_decline:.1f}%")
         with col2:
-            avg_density_post_cbdc = data[data.index >= params['cbdc_introduction_month']]['Banking_Network_Density'].mean()
+            avg_density_post_cbdc = data[data.index >= params['cbdc_introduction_step']]['Banking_Network_Density'].mean()
             st.metric("Avg Density Post-CBDC", f"{avg_density_post_cbdc:.3f}")
     
-    with tab6:
-        st.subheader("Consumer-to-Consumer Transaction Analysis")
-        st.write("Analysis of payment method usage before and after CBDC introduction")
-        
-        # Check if model exists and has been run
-        if 'model' not in st.session_state:
-            st.info("Run the simulation first to see transaction analysis")
-            return
-        
-        # Get transaction analysis
-        transaction_analysis = st.session_state.model.get_transaction_analysis()
-        
-        if transaction_analysis:
-            pre_period = transaction_analysis.get('pre_cbdc_period', {})
-            post_period = transaction_analysis.get('post_cbdc_period', {})
-            substitution = transaction_analysis.get('substitution_analysis', {})
-            
-            # Transaction volume comparison
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("Pre-CBDC Period")
-                if pre_period.get('total_volume', 0) > 0:
-                    pre_bank_pct = pre_period.get('bank_volume', 0) / pre_period.get('total_volume', 1) * 100
-                    pre_other_pct = pre_period.get('other_volume', 0) / pre_period.get('total_volume', 1) * 100
-                    
-                    st.metric("Total Transaction Volume", f"{pre_period.get('total_volume', 0):,.0f} units")
-                    st.metric("Bank Transactions", f"{pre_bank_pct:.1f}%")
-                    st.metric("CBDC Transactions", "0.0%")
-                    st.metric("Other Payment Methods", f"{pre_other_pct:.1f}%")
-                else:
-                    st.info("Run simulation to see pre-CBDC transaction data")
-            
-            with col2:
-                st.subheader("Post-CBDC Period")
-                if post_period.get('total_volume', 0) > 0:
-                    post_bank_pct = post_period.get('bank_volume', 0) / post_period.get('total_volume', 1) * 100
-                    post_cbdc_pct = post_period.get('cbdc_volume', 0) / post_period.get('total_volume', 1) * 100
-                    post_other_pct = post_period.get('other_volume', 0) / post_period.get('total_volume', 1) * 100
-                    
-                    st.metric("Total Transaction Volume", f"{post_period.get('total_volume', 0):,.0f} units")
-                    st.metric("Bank Transactions", f"{post_bank_pct:.1f}%", f"{post_bank_pct - 100:.1f}%")
-                    st.metric("CBDC Transactions", f"{post_cbdc_pct:.1f}%", f"+{post_cbdc_pct:.1f}%")
-                    st.metric("Other Payment Methods", f"{post_other_pct:.1f}%")
-                else:
-                    st.info("CBDC not yet introduced or insufficient post-CBDC data")
-            
-            # Transaction volume over time
-            if len(data) > 0 and 'Bank_Transaction_Volume' in data.columns:
-                st.subheader("Transaction Volume Trends")
-                
-                fig_transactions = go.Figure()
-                
-                # Add transaction volume traces
-                fig_transactions.add_trace(
-                    go.Scatter(x=data.index, y=data['Bank_Transaction_Volume'],
-                              name='Bank Transactions', 
-                              fill='tonexty',
-                              line=dict(color='blue'))
-                )
-                
-                fig_transactions.add_trace(
-                    go.Scatter(x=data.index, y=data['CBDC_Transaction_Volume'],
-                              name='CBDC Transactions',
-                              fill='tonexty', 
-                              line=dict(color='green'))
-                )
-                
-                fig_transactions.add_trace(
-                    go.Scatter(x=data.index, y=data['Other_Transaction_Volume'],
-                              name='Other Transactions',
-                              fill='tonexty',
-                              line=dict(color='orange'))
-                )
-                
-                # Add CBDC introduction line
-                cbdc_intro_step = transaction_analysis.get('cbdc_introduction_month', 12)
-                fig_transactions.add_vline(x=cbdc_intro_step, line_dash="dash", line_color="red",
-                                         annotation_text="CBDC Launch")
-                
-                fig_transactions.update_layout(
-                    title="Transaction Volume by Payment Method",
-                    xaxis_title="Simulation Step",
-                    yaxis_title="Transaction Volume ()",
-                    hovermode='x unified'
-                )
-                
-                st.plotly_chart(fig_transactions, use_container_width=True)
-                
-                # CBDC transaction share over time
-                fig_share = go.Figure()
-                fig_share.add_trace(
-                    go.Scatter(x=data.index, y=data['CBDC_Transaction_Share'],
-                              name='CBDC Transaction Share',
-                              line=dict(color='green', width=3),
-                              fill='tonexty')
-                )
-                
-                fig_share.add_vline(x=cbdc_intro_step, line_dash="dash", line_color="red",
-                                   annotation_text="CBDC Launch")
-                
-                fig_share.update_layout(
-                    title="CBDC Market Share in Transactions",
-                    xaxis_title="Simulation Step",
-                    yaxis_title="CBDC Share (%)",
-                    yaxis=dict(range=[0, 100])
-                )
-                
-                st.plotly_chart(fig_share, use_container_width=True)
-            
-            # Substitution analysis
-            if substitution:
-                st.subheader("Payment Method Substitution Analysis")
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Pre-CBDC Bank Share", 
-                             f"{substitution.get('pre_cbdc_bank_share', 0):.1f}%")
-                with col2:
-                    st.metric("Post-CBDC Bank Share", 
-                             f"{substitution.get('post_cbdc_bank_share', 0):.1f}%",
-                             f"{substitution.get('post_cbdc_bank_share', 0) - substitution.get('pre_cbdc_bank_share', 0):.1f}%")
-                with col3:
-                    st.metric("Transaction Substitution Rate", 
-                             f"{substitution.get('transaction_substitution_rate', 0):.1f}%")
-                
-                # Create substitution visualization
-                labels = ['Bank (Post-CBDC)', 'CBDC (Post-CBDC)', 'Other (Post-CBDC)']
-                values = [
-                    substitution.get('post_cbdc_bank_share', 0),
-                    substitution.get('post_cbdc_cbdc_share', 0),
-                    100 - substitution.get('post_cbdc_bank_share', 0) - substitution.get('post_cbdc_cbdc_share', 0)
-                ]
-                colors = ['lightblue', 'lightgreen', 'lightorange']
-                
-                fig_pie = go.Figure(data=[go.Pie(labels=labels, values=values, hole=0.3)])
-                fig_pie.update_traces(marker=dict(colors=colors))
-                fig_pie.update_layout(title="Payment Method Distribution (Post-CBDC)")
-                
-                st.plotly_chart(fig_pie, use_container_width=True)
-        
-        else:
-            st.info("Run the simulation to see transaction analysis")
-        
-        # CBDC Exchange Mechanism
-        st.subheader("CBDC Exchange Mechanism (1:1 Ratio)")
-        
-        if 'model' in st.session_state and hasattr(st.session_state.model.central_bank, 'central_bank_deposits'):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("CBDC Outstanding", 
-                         f"{st.session_state.model.central_bank.cbdc_outstanding:,.0f} units")
-            with col2:
-                st.metric("Central Bank Deposits", 
-                         f"{st.session_state.model.central_bank.central_bank_deposits:,.0f}units")
-            with col3:
-                exchange_balance = st.session_state.model.central_bank.cbdc_outstanding - st.session_state.model.central_bank.central_bank_deposits
-                st.metric("Exchange Balance", 
-                         f"{exchange_balance:,.0f}units",
-                         "✓ Balanced" if abs(exchange_balance) < 1 else "⚠ Imbalanced")
-            
-            st.info("💡 The 1:1 exchange mechanism ensures no new money is created. CBDC is issued only when commercial banks transfer equivalent deposits to the central bank.")
-        
-        # Bank outflow tracking
-        st.subheader("Commercial Bank CBDC Outflows")
-        
-        if 'model' not in st.session_state:
-            st.info("Run simulation to see bank outflow data")
-        else:
-            bank_outflow_data = []
-            for bank in st.session_state.model.commercial_banks:
-                if hasattr(bank, 'cbdc_related_outflows'):
-                    bank_outflow_data.append({
-                        'Bank ID': f"Bank {bank.unique_id}",
-                        'Bank Type': bank.bank_type,
-                        'CBDC Outflows': bank.cbdc_related_outflows,
-                        'Total Deposits': bank.total_deposits,
-                        'Outflow Rate': (bank.cbdc_related_outflows / max(bank.total_deposits + bank.cbdc_related_outflows, 1)) * 100
-                    })
-        
-            if bank_outflow_data:
-                import pandas as pd
-                df_outflows = pd.DataFrame(bank_outflow_data)
-                st.dataframe(df_outflows, use_container_width=True)
-            else:
-                st.info("No CBDC-related outflows recorded yet")
-
-    with tab7:
+    with tab5:
         st.subheader("H6: Central Bank Network Dominance")
         st.write("Testing hypothesis: Central bank becomes dominant network node with CBDC")
         

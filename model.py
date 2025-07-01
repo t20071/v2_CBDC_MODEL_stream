@@ -37,9 +37,9 @@ class CBDCBankingModel(Model):
     cbdc_introduction_step: int
     
     def __init__(self, n_consumers=200, n_commercial_banks=8, 
-                 cbdc_introduction_step=12, cbdc_adoption_rate=0.20,
+                 cbdc_introduction_step=30, cbdc_adoption_rate=0.08,
                  cbdc_attractiveness=2.2, initial_consumer_wealth=8400,
-                 bank_interest_rate=0.048, cbdc_interest_rate=0.055):
+                 bank_interest_rate=0.048, cbdc_interest_rate=0.045):
         
         super().__init__()
         
@@ -139,7 +139,6 @@ class CBDCBankingModel(Model):
         self.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
         self.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
         self.monthly_transactions = {}
-        self.step_transactions = {"Bank": 0, "CBDC": 0, "Other": 0}
         
         # Data collection
         self.datacollector = DataCollector(
@@ -187,46 +186,28 @@ class CBDCBankingModel(Model):
         """Advance the model by one step."""
         self.current_step += 1
         
-        # Introduce CBDC at specified month
+        # Introduce CBDC at specified step
         if self.current_step == self.cbdc_introduction_step:
             self.cbdc_introduced = True
             self.central_bank.introduce_cbdc()
-            print(f"CBDC introduced at month {self.current_step}")
+            print(f"CBDC introduced at step {self.current_step}")
         
-        # Monthly CBDC network effects growth (research-based)
+        # Update CBDC attractiveness over time (network effects)
         if self.cbdc_introduced:
             adoption_rate = self.compute_cbdc_adoption_rate()
-            months_since_intro = self.current_step - self.cbdc_introduction_step
-            # Monthly network effects compound (Keister & Sanches, 2023)
-            monthly_network_growth = 1 + (adoption_rate * 0.08)  # 8% monthly compound
-            time_decay = max(0.5, 1 - (months_since_intro * 0.02))  # Diminishing returns
-            self.central_bank.cbdc_attractiveness = self.cbdc_attractiveness * monthly_network_growth * time_decay
-        
-        # Clear step-specific transactions before agents act
-        self.step_transactions = {"Bank": 0, "CBDC": 0, "Other": 0}
+            # Network effects: as more people adopt, it becomes more attractive
+            network_effect = 1 + (adoption_rate * 0.5)
+            self.central_bank.cbdc_attractiveness = self.cbdc_attractiveness * network_effect
         
         # Execute agent steps
         for agent in self.all_agents:
             agent.step()
-        
-        # Record monthly transactions
-        self.monthly_transactions[self.current_step] = self.step_transactions.copy()
         
         # Market dynamics: banks adjust interest rates based on deposit outflows
         self.adjust_market_conditions()
         
         # Collect data
         self.datacollector.collect(self)
-    
-    def record_transaction(self, amount, payment_method):
-        """Record a transaction with its payment method for analysis."""
-        if payment_method in self.step_transactions:
-            self.step_transactions[payment_method] += amount
-        
-        # Also update running totals
-        if payment_method in self.transaction_volumes:
-            self.transaction_volumes[payment_method] += amount
-            self.transaction_counts[payment_method] += 1
     
     def adjust_market_conditions(self):
         """Adjust market conditions based on current state."""
@@ -329,7 +310,7 @@ class CBDCBankingModel(Model):
             initial_customer_deposits = 0
             for consumer in self.consumers:
                 if consumer.primary_bank == bank:
-                    # Consumer deposits 37% of their 8,400 wealth = 3,108 per consumer
+                    # Consumer deposits 37% of their $8,400 wealth = $3,108 per consumer
                     consumer_deposit = consumer.initial_wealth * 0.37
                     initial_customer_deposits += consumer_deposit
                     # Update consumer's portfolio allocation

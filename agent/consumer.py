@@ -16,7 +16,7 @@ class Consumer(Agent):
     """
     
     def __init__(self, unique_id, model, initial_wealth=8400, 
-                 cbdc_adoption_probability=0.15, risk_aversion=0.55):
+                 cbdc_adoption_probability=0.08, risk_aversion=0.55):
         super().__init__(model)
         
         # Store agent properties
@@ -91,10 +91,10 @@ class Consumer(Agent):
         # Realistic income allocation - new income goes to existing payment methods
         # CBDC adopters choose WHERE to receive their income (direct deposit choice)
         if self.cbdc_adopter:
-            # Conservative CBDC income allocation to maintain banks
-            cbdc_income_preference = self.get_cbdc_preference() * 0.3  # Max 30% of income to CBDC
+            # Income can be received directly to CBDC account (like direct deposit to digital wallet)
+            cbdc_income_preference = self.get_cbdc_preference() * 0.6  # Max 60% of income to CBDC
             direct_cbdc_income = monthly_income * cbdc_income_preference
-            bank_income = monthly_income * 0.45  # Ensure strong bank relationship
+            bank_income = monthly_income * 0.37  # Still need some bank relationship
             other_income = monthly_income - direct_cbdc_income - bank_income
             
             self.cbdc_holdings += direct_cbdc_income
@@ -108,9 +108,9 @@ class Consumer(Agent):
             self.bank_deposits += bank_allocation
             self.other_assets += other_allocation
         
-        # Monthly consumer-to-consumer transactions (research-based volume)
-        monthly_spending = self.wealth * self.spending_rate  # 8% monthly spending
-        self.execute_monthly_transactions(monthly_spending)
+        # Consumer-to-consumer transactions (daily spending through transfers)
+        monthly_spending = self.wealth * self.spending_rate
+        self.execute_daily_transactions(monthly_spending)
         
         # Reduce wealth by spending amount
         self.wealth -= monthly_spending
@@ -263,15 +263,14 @@ class Consumer(Agent):
         if not self.cbdc_adopter:
             return 0.0
         
-        # Conservative CBDC preference to prevent total displacement
-        base_preference = 0.15  # Start with 15% allocation - partial adoption
+        # Progressive base preference that grows over time
+        base_preference = 0.5  # Start with 50% allocation (increased from 30%)
         
-        # Conservative learning curve to maintain bank deposits
+        # Time-based preference acceleration
         if hasattr(self, 'adoption_step') and self.adoption_step is not None:
             model = self.get_model()
-            months_since_adoption = model.current_step - self.adoption_step
-            # Limited growth to prevent total displacement
-            time_growth = min(0.25, months_since_adoption * 0.025)  # Up to 25% max growth
+            steps_since_adoption = model.current_step - self.adoption_step
+            time_growth = min(0.4, steps_since_adoption * 0.025)  # Up to 40% growth over time
             base_preference += time_growth
         
         # Interest rate differential impact (stronger effect)
@@ -312,8 +311,8 @@ class Consumer(Agent):
         social_adjustment = self.social_influence_weight * peer_cbdc_usage * 0.4  # Increased
         base_preference += social_adjustment
         
-        # Conservative maximum allocation to maintain banking sector
-        return max(0.0, min(0.4, base_preference))  # Up to 40% in CBDC to prevent displacement
+        # Higher maximum allocation to CBDC
+        return max(0.0, min(0.9, base_preference))  # Up to 90% in CBDC
     
     def get_peer_adoption_rate(self):
         """Get CBDC adoption rate among peers (simplified as overall adoption rate)."""
@@ -328,8 +327,8 @@ class Consumer(Agent):
             return total_cbdc / total_wealth
         return 0.0
     
-    def execute_monthly_transactions(self, total_spending):
-        """Execute monthly consumer-to-consumer transactions using preferred payment methods."""
+    def execute_daily_transactions(self, total_spending):
+        """Execute daily consumer-to-consumer transactions using preferred payment methods."""
         if total_spending <= 0:
             return
         
@@ -377,8 +376,25 @@ class Consumer(Agent):
     
     def record_transaction(self, amount, payment_method, model):
         """Record transaction for analysis and tracking."""
-        # Use the model's centralized record_transaction method
-        model.record_transaction(amount, payment_method)
+        # Track transaction volumes by payment method
+        if not hasattr(model, 'transaction_volumes'):
+            model.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
+        
+        if not hasattr(model, 'transaction_counts'):
+            model.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
+        
+        model.transaction_volumes[payment_method] += amount
+        model.transaction_counts[payment_method] += 1
+        
+        # Track monthly totals for step-by-step analysis
+        current_step = model.current_step
+        if not hasattr(model, 'monthly_transactions'):
+            model.monthly_transactions = {}
+        
+        if current_step not in model.monthly_transactions:
+            model.monthly_transactions[current_step] = {"Bank": 0, "CBDC": 0, "Other": 0}
+        
+        model.monthly_transactions[current_step][payment_method] += amount
 
     def update_banking_relationship(self):
         """Update relationship with primary bank."""
@@ -410,4 +426,4 @@ class Consumer(Agent):
         }
     
     def __str__(self):
-        return f"Consumer_{self.unique_id}: Wealth={self.wealth:.0f}, Bank={self.bank_deposits:.0f}, CBDC={self.cbdc_holdings:.0f}, Adopter={self.cbdc_adopter}"
+        return f"Consumer_{self.unique_id}: Wealth=${self.wealth:.0f}, Bank=${self.bank_deposits:.0f}, CBDC=${self.cbdc_holdings:.0f}, Adopter={self.cbdc_adopter}"
