@@ -481,6 +481,11 @@ def display_results():
         st.subheader("Consumer-to-Consumer Transaction Analysis")
         st.write("Analysis of payment method usage before and after CBDC introduction")
         
+        # Check if model exists and has been run
+        if 'model' not in st.session_state:
+            st.info("Run the simulation first to see transaction analysis")
+            return
+        
         # Get transaction analysis
         transaction_analysis = st.session_state.model.get_transaction_analysis()
         
@@ -619,7 +624,7 @@ def display_results():
         # CBDC Exchange Mechanism
         st.subheader("CBDC Exchange Mechanism (1:1 Ratio)")
         
-        if hasattr(st.session_state.model.central_bank, 'central_bank_deposits'):
+        if 'model' in st.session_state and hasattr(st.session_state.model.central_bank, 'central_bank_deposits'):
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("CBDC Outstanding", 
@@ -638,23 +643,26 @@ def display_results():
         # Bank outflow tracking
         st.subheader("Commercial Bank CBDC Outflows")
         
-        bank_outflow_data = []
-        for bank in st.session_state.model.commercial_banks:
-            if hasattr(bank, 'cbdc_related_outflows'):
-                bank_outflow_data.append({
-                    'Bank ID': f"Bank {bank.unique_id}",
-                    'Bank Type': bank.bank_type,
-                    'CBDC Outflows': bank.cbdc_related_outflows,
-                    'Total Deposits': bank.total_deposits,
-                    'Outflow Rate': (bank.cbdc_related_outflows / max(bank.total_deposits + bank.cbdc_related_outflows, 1)) * 100
-                })
-        
-        if bank_outflow_data:
-            import pandas as pd
-            df_outflows = pd.DataFrame(bank_outflow_data)
-            st.dataframe(df_outflows, use_container_width=True)
+        if 'model' not in st.session_state:
+            st.info("Run simulation to see bank outflow data")
         else:
-            st.info("No CBDC-related outflows recorded yet")
+            bank_outflow_data = []
+            for bank in st.session_state.model.commercial_banks:
+                if hasattr(bank, 'cbdc_related_outflows'):
+                    bank_outflow_data.append({
+                        'Bank ID': f"Bank {bank.unique_id}",
+                        'Bank Type': bank.bank_type,
+                        'CBDC Outflows': bank.cbdc_related_outflows,
+                        'Total Deposits': bank.total_deposits,
+                        'Outflow Rate': (bank.cbdc_related_outflows / max(bank.total_deposits + bank.cbdc_related_outflows, 1)) * 100
+                    })
+        
+            if bank_outflow_data:
+                import pandas as pd
+                df_outflows = pd.DataFrame(bank_outflow_data)
+                st.dataframe(df_outflows, use_container_width=True)
+            else:
+                st.info("No CBDC-related outflows recorded yet")
 
     with tab7:
         st.subheader("H6: Central Bank Network Dominance")
