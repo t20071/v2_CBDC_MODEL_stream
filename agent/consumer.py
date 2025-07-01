@@ -376,25 +376,8 @@ class Consumer(Agent):
     
     def record_transaction(self, amount, payment_method, model):
         """Record transaction for analysis and tracking."""
-        # Track transaction volumes by payment method
-        if not hasattr(model, 'transaction_volumes'):
-            model.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
-        
-        if not hasattr(model, 'transaction_counts'):
-            model.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
-        
-        model.transaction_volumes[payment_method] += amount
-        model.transaction_counts[payment_method] += 1
-        
-        # Track monthly totals for step-by-step analysis
-        current_step = model.current_step
-        if not hasattr(model, 'monthly_transactions'):
-            model.monthly_transactions = {}
-        
-        if current_step not in model.monthly_transactions:
-            model.monthly_transactions[current_step] = {"Bank": 0, "CBDC": 0, "Other": 0}
-        
-        model.monthly_transactions[current_step][payment_method] += amount
+        # Use the model's centralized record_transaction method
+        model.record_transaction(amount, payment_method)
 
     def update_banking_relationship(self):
         """Update relationship with primary bank."""
