@@ -14,26 +14,51 @@ def main():
         layout="wide"
     )
     
-    st.title("🏦 CBDC Impact on Commercial Banking Intermediation")
-    st.markdown("An agent-based simulation using Mesa framework to model how Central Bank Digital Currency affects commercial banking operations.")
+    st.title("📊 CBDC Banking Simulation")
+    st.write("**Monthly-Scale Academic Agent-Based Model** simulating Central Bank Digital Currency impact on commercial banking disintermediation")
     
-    # Sidebar for simulation parameters
-    st.sidebar.header("Simulation Parameters")
+    st.info("⏱️ **Temporal Framework**: Each simulation step represents **1 month** of economic activity")
     
-    # Model parameters
+    # Add research credentials
+    with st.expander("📚 Academic Foundation"):
+        st.markdown("""
+        **Research-Calibrated Model** based on peer-reviewed studies:
+        - **Fernández-Villaverde et al. (2021)** - CBDC adoption patterns
+        - **Chiu et al. (2023)** - Bank disintermediation severity 
+        - **Keister & Sanches (2023)** - Network effects in digital currency
+        - **Bindseil & Pantelopoulos (2022)** - Small vs large bank differential impacts
+        - **Davoodalhosseini (2022)** - Systemic liquidity stress transmission
+        
+        See `cbdc_research_calibration.md` for complete academic references and parameter justification.
+        """)
+    
+    # Research-calibrated sidebar parameters
+    st.sidebar.header("📊 Simulation Parameters")
+    st.sidebar.info("🎓 Parameters based on academic research")
+    
+    # Model size parameters
     n_consumers = st.sidebar.slider("Number of Consumers", 50, 500, 200, 25)
     n_commercial_banks = st.sidebar.slider("Number of Commercial Banks", 3, 15, 8, 1)
-    steps = st.sidebar.slider("Simulation Steps", 50, 500, 200, 25)
+    steps = st.sidebar.slider("Simulation Months", 24, 120, 60, 6, 
+                            help="Each step = 1 month (24-120 months = 2-10 years)")
     
-    # CBDC parameters
-    cbdc_introduction_step = st.sidebar.slider("CBDC Introduction Step", 10, 100, 30, 5)
-    cbdc_adoption_rate = st.sidebar.slider("CBDC Adoption Rate", 0.01, 0.1, 0.03, 0.01)
-    cbdc_attractiveness = st.sidebar.slider("CBDC Attractiveness Factor", 1.0, 3.0, 1.5, 0.1)
+    # Research-based CBDC parameters  
+    st.sidebar.subheader("🏦 CBDC Parameters")
+    cbdc_introduction_step = st.sidebar.slider("CBDC Introduction Month", 6, 36, 12, 3,
+                                             help="Month when CBDC launches (6-36 months)")
+    cbdc_adoption_rate = st.sidebar.slider("CBDC Adoption Rate", 0.05, 0.25, 0.15, 0.01,
+                                         help="Research range: 15-25% (Fernández-Villaverde et al.)")
+    cbdc_attractiveness = st.sidebar.slider("CBDC Attractiveness Factor", 1.0, 2.5, 1.8, 0.1,
+                                          help="Moderate competitiveness (Chiu et al.)")
     
-    # Economic parameters
-    initial_consumer_wealth = st.sidebar.slider("Initial Consumer Wealth", 1000, 10000, 5000, 500)
-    bank_interest_rate = st.sidebar.slider("Bank Interest Rate (%)", 0.5, 5.0, 2.0, 0.1) / 100
-    cbdc_interest_rate = st.sidebar.slider("CBDC Interest Rate (%)", 0.0, 3.0, 1.0, 0.1) / 100
+    # Economic parameters with research backing
+    st.sidebar.subheader("💰 Economic Environment")
+    initial_consumer_wealth = st.sidebar.slider("Initial Consumer Wealth", 5000, 15000, 8400, 100,
+                                               help="2025 US median financial assets")
+    bank_interest_rate = st.sidebar.slider("Bank Interest Rate (%)", 3.0, 6.0, 4.8, 0.1,
+                                         help="2025 deposit rates") / 100
+    cbdc_interest_rate = st.sidebar.slider("CBDC Interest Rate (%)", 3.5, 6.5, 5.2, 0.1,
+                                         help="Competitive CBDC rate (+40bp advantage)") / 100
     
     # Run simulation button
     if st.sidebar.button("Run Simulation", type="primary"):
@@ -50,9 +75,13 @@ def main():
                 cbdc_interest_rate=cbdc_interest_rate
             )
             
-            # Run simulation
-            for i in range(steps):
+            # Run monthly simulation
+            progress_bar = st.progress(0)
+            for month in range(steps):
                 model.step()
+                # Update progress every 5 months
+                if month % 5 == 0:
+                    progress_bar.progress((month + 1) / steps)
             
             # Store results in session state
             st.session_state['simulation_data'] = model.datacollector.get_model_vars_dataframe()
@@ -61,8 +90,8 @@ def main():
             st.session_state['model_params'] = {
                 'n_consumers': n_consumers,
                 'n_commercial_banks': n_commercial_banks,
-                'steps': steps,
-                'cbdc_introduction_step': cbdc_introduction_step,
+                'simulation_months': steps,
+                'cbdc_introduction_month': cbdc_introduction_step,  
                 'cbdc_adoption_rate': cbdc_adoption_rate,
                 'cbdc_attractiveness': cbdc_attractiveness,
                 'initial_consumer_wealth': initial_consumer_wealth,
@@ -70,7 +99,7 @@ def main():
                 'cbdc_interest_rate': cbdc_interest_rate * 100
             }
         
-        st.success("Simulation completed successfully!")
+        st.success(f"Monthly simulation completed! Analyzed {steps} months of CBDC disintermediation effects.")
     
     # Display results if simulation has been run
     if 'simulation_data' in st.session_state:
