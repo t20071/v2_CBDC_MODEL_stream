@@ -241,7 +241,7 @@ def display_results():
     st.header("📊 Detailed Time Series Analysis")
     
     # Create tabs for different analyses
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "CBDC Substitution", "H1: Network Centrality", "H3: Liquidity Stress", 
         "H4: Network Connectivity", "H6: Central Bank Dominance", "Agent Flow Chart"
     ])
@@ -473,6 +473,185 @@ def display_results():
             st.metric("Avg Density Post-CBDC", f"{avg_density_post_cbdc:.3f}")
     
     with tab5:
+        st.subheader("Consumer-to-Consumer Transaction Analysis")
+        st.write("Analysis of payment method usage before and after CBDC introduction")
+        
+        # Get transaction analysis
+        transaction_analysis = model.get_transaction_analysis()
+        
+        if transaction_analysis:
+            pre_period = transaction_analysis.get('pre_cbdc_period', {})
+            post_period = transaction_analysis.get('post_cbdc_period', {})
+            substitution = transaction_analysis.get('substitution_analysis', {})
+            
+            # Transaction volume comparison
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Pre-CBDC Period")
+                if pre_period.get('total_volume', 0) > 0:
+                    pre_bank_pct = pre_period.get('bank_volume', 0) / pre_period.get('total_volume', 1) * 100
+                    pre_other_pct = pre_period.get('other_volume', 0) / pre_period.get('total_volume', 1) * 100
+                    
+                    st.metric("Total Transaction Volume", f"${pre_period.get('total_volume', 0):,.0f}")
+                    st.metric("Bank Transactions", f"{pre_bank_pct:.1f}%")
+                    st.metric("CBDC Transactions", "0.0%")
+                    st.metric("Other Payment Methods", f"{pre_other_pct:.1f}%")
+                else:
+                    st.info("Run simulation to see pre-CBDC transaction data")
+            
+            with col2:
+                st.subheader("Post-CBDC Period")
+                if post_period.get('total_volume', 0) > 0:
+                    post_bank_pct = post_period.get('bank_volume', 0) / post_period.get('total_volume', 1) * 100
+                    post_cbdc_pct = post_period.get('cbdc_volume', 0) / post_period.get('total_volume', 1) * 100
+                    post_other_pct = post_period.get('other_volume', 0) / post_period.get('total_volume', 1) * 100
+                    
+                    st.metric("Total Transaction Volume", f"${post_period.get('total_volume', 0):,.0f}")
+                    st.metric("Bank Transactions", f"{post_bank_pct:.1f}%", f"{post_bank_pct - 100:.1f}%")
+                    st.metric("CBDC Transactions", f"{post_cbdc_pct:.1f}%", f"+{post_cbdc_pct:.1f}%")
+                    st.metric("Other Payment Methods", f"{post_other_pct:.1f}%")
+                else:
+                    st.info("CBDC not yet introduced or insufficient post-CBDC data")
+            
+            # Transaction volume over time
+            if len(data) > 0 and 'Bank_Transaction_Volume' in data.columns:
+                st.subheader("Transaction Volume Trends")
+                
+                fig_transactions = go.Figure()
+                
+                # Add transaction volume traces
+                fig_transactions.add_trace(
+                    go.Scatter(x=data.index, y=data['Bank_Transaction_Volume'],
+                              name='Bank Transactions', 
+                              fill='tonexty',
+                              line=dict(color='blue'))
+                )
+                
+                fig_transactions.add_trace(
+                    go.Scatter(x=data.index, y=data['CBDC_Transaction_Volume'],
+                              name='CBDC Transactions',
+                              fill='tonexty', 
+                              line=dict(color='green'))
+                )
+                
+                fig_transactions.add_trace(
+                    go.Scatter(x=data.index, y=data['Other_Transaction_Volume'],
+                              name='Other Transactions',
+                              fill='tonexty',
+                              line=dict(color='orange'))
+                )
+                
+                # Add CBDC introduction line
+                cbdc_intro_step = transaction_analysis.get('cbdc_introduction_step', 30)
+                fig_transactions.add_vline(x=cbdc_intro_step, line_dash="dash", line_color="red",
+                                         annotation_text="CBDC Launch")
+                
+                fig_transactions.update_layout(
+                    title="Transaction Volume by Payment Method",
+                    xaxis_title="Simulation Step",
+                    yaxis_title="Transaction Volume ($)",
+                    hovermode='x unified'
+                )
+                
+                st.plotly_chart(fig_transactions, use_container_width=True)
+                
+                # CBDC transaction share over time
+                fig_share = go.Figure()
+                fig_share.add_trace(
+                    go.Scatter(x=data.index, y=data['CBDC_Transaction_Share'],
+                              name='CBDC Transaction Share',
+                              line=dict(color='green', width=3),
+                              fill='tonexty')
+                )
+                
+                fig_share.add_vline(x=cbdc_intro_step, line_dash="dash", line_color="red",
+                                   annotation_text="CBDC Launch")
+                
+                fig_share.update_layout(
+                    title="CBDC Market Share in Transactions",
+                    xaxis_title="Simulation Step",
+                    yaxis_title="CBDC Share (%)",
+                    yaxis=dict(range=[0, 100])
+                )
+                
+                st.plotly_chart(fig_share, use_container_width=True)
+            
+            # Substitution analysis
+            if substitution:
+                st.subheader("Payment Method Substitution Analysis")
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Pre-CBDC Bank Share", 
+                             f"{substitution.get('pre_cbdc_bank_share', 0):.1f}%")
+                with col2:
+                    st.metric("Post-CBDC Bank Share", 
+                             f"{substitution.get('post_cbdc_bank_share', 0):.1f}%",
+                             f"{substitution.get('post_cbdc_bank_share', 0) - substitution.get('pre_cbdc_bank_share', 0):.1f}%")
+                with col3:
+                    st.metric("Transaction Substitution Rate", 
+                             f"{substitution.get('transaction_substitution_rate', 0):.1f}%")
+                
+                # Create substitution visualization
+                labels = ['Bank (Post-CBDC)', 'CBDC (Post-CBDC)', 'Other (Post-CBDC)']
+                values = [
+                    substitution.get('post_cbdc_bank_share', 0),
+                    substitution.get('post_cbdc_cbdc_share', 0),
+                    100 - substitution.get('post_cbdc_bank_share', 0) - substitution.get('post_cbdc_cbdc_share', 0)
+                ]
+                colors = ['lightblue', 'lightgreen', 'lightorange']
+                
+                fig_pie = go.Figure(data=[go.Pie(labels=labels, values=values, hole=0.3)])
+                fig_pie.update_traces(marker=dict(colors=colors))
+                fig_pie.update_layout(title="Payment Method Distribution (Post-CBDC)")
+                
+                st.plotly_chart(fig_pie, use_container_width=True)
+        
+        else:
+            st.info("Run the simulation to see transaction analysis")
+        
+        # CBDC Exchange Mechanism
+        st.subheader("CBDC Exchange Mechanism (1:1 Ratio)")
+        
+        if hasattr(model.central_bank, 'central_bank_deposits'):
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("CBDC Outstanding", 
+                         f"${model.central_bank.cbdc_outstanding:,.0f}")
+            with col2:
+                st.metric("Central Bank Deposits", 
+                         f"${model.central_bank.central_bank_deposits:,.0f}")
+            with col3:
+                exchange_balance = model.central_bank.cbdc_outstanding - model.central_bank.central_bank_deposits
+                st.metric("Exchange Balance", 
+                         f"${exchange_balance:,.0f}",
+                         "✓ Balanced" if abs(exchange_balance) < 1 else "⚠ Imbalanced")
+            
+            st.info("💡 The 1:1 exchange mechanism ensures no new money is created. CBDC is issued only when commercial banks transfer equivalent deposits to the central bank.")
+        
+        # Bank outflow tracking
+        st.subheader("Commercial Bank CBDC Outflows")
+        
+        bank_outflow_data = []
+        for bank in model.commercial_banks:
+            if hasattr(bank, 'cbdc_related_outflows'):
+                bank_outflow_data.append({
+                    'Bank ID': f"Bank {bank.unique_id}",
+                    'Bank Type': bank.bank_type,
+                    'CBDC Outflows': bank.cbdc_related_outflows,
+                    'Total Deposits': bank.total_deposits,
+                    'Outflow Rate': (bank.cbdc_related_outflows / max(bank.total_deposits + bank.cbdc_related_outflows, 1)) * 100
+                })
+        
+        if bank_outflow_data:
+            import pandas as pd
+            df_outflows = pd.DataFrame(bank_outflow_data)
+            st.dataframe(df_outflows, use_container_width=True)
+        else:
+            st.info("No CBDC-related outflows recorded yet")
+
+    with tab6:
         st.subheader("H6: Central Bank Network Dominance")
         st.write("Testing hypothesis: Central bank becomes dominant network node with CBDC")
         
