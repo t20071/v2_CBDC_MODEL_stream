@@ -285,7 +285,7 @@ def display_results():
         
         # Calculate substitution metrics with proper baseline
         # CBDC substitution should be zero before introduction
-        cbdc_intro_step = params['cbdc_introduction_step']
+        cbdc_intro_step = params['cbdc_introduction_month']
         
         # Initialize substitution rate to zero
         data['Deposit_Substitution_Rate'] = 0.0

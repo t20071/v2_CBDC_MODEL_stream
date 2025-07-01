@@ -118,6 +118,9 @@ Changelog:
 - July 1, 2025. Aligned simulation with academic research on CBDC disintermediation (Fernández-Villaverde et al. 2021, Chiu et al. 2023, Keister & Sanches 2023)
 - July 1, 2025. Updated CBDC adoption rate to 15%, CBDC rate to 5.2%, enhanced network effects based on empirical findings
 - July 1, 2025. Created comprehensive research calibration documentation with 9+ academic references for authenticity
+- July 1, 2025. Converted temporal framework from daily steps to monthly timeframes for realistic economic modeling
+- July 1, 2025. Updated all agent behaviors for monthly economic activities (income, spending, loan cycles, adoption decisions)
+- July 1, 2025. Enhanced app.py interface to reflect monthly scale with research-calibrated parameters and academic credibility indicators
 ```
 
 ## User Preferences
