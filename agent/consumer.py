@@ -108,15 +108,12 @@ class Consumer(Agent):
             self.bank_deposits += bank_allocation
             self.other_assets += other_allocation
         
-        # Spending (reduces holdings proportionally)
+        # Consumer-to-consumer transactions (daily spending through transfers)
         monthly_spending = self.wealth * self.spending_rate
-        spending_ratio = monthly_spending / self.wealth if self.wealth > 0 else 0
+        self.execute_daily_transactions(monthly_spending)
         
-        if spending_ratio > 0:
-            self.bank_deposits *= (1 - spending_ratio)
-            self.cbdc_holdings *= (1 - spending_ratio)
-            self.other_assets *= (1 - spending_ratio)
-            self.wealth -= monthly_spending
+        # Reduce wealth by spending amount
+        self.wealth -= monthly_spending
     
     def consider_cbdc_adoption(self):
         """Decide whether to adopt CBDC."""
@@ -330,6 +327,75 @@ class Consumer(Agent):
             return total_cbdc / total_wealth
         return 0.0
     
+    def execute_daily_transactions(self, total_spending):
+        """Execute daily consumer-to-consumer transactions using preferred payment methods."""
+        if total_spending <= 0:
+            return
+        
+        # Get model reference for transaction tracking
+        model = self.get_model()
+        
+        # Determine payment method based on CBDC adoption and holdings
+        if self.cbdc_adopter and self.cbdc_holdings > 0:
+            # CBDC adopters prefer CBDC for transactions when available
+            cbdc_preference = self.get_cbdc_preference()
+            
+            # Split spending between CBDC and bank transfers
+            cbdc_spending = min(total_spending * cbdc_preference, self.cbdc_holdings)
+            bank_spending = total_spending - cbdc_spending
+            
+            # Execute CBDC transactions
+            if cbdc_spending > 0:
+                self.cbdc_holdings -= cbdc_spending
+                self.record_transaction(cbdc_spending, "CBDC", model)
+            
+            # Execute bank transactions for remaining amount
+            if bank_spending > 0:
+                bank_payment = min(bank_spending, self.bank_deposits)
+                other_payment = bank_spending - bank_payment
+                
+                self.bank_deposits -= bank_payment
+                self.other_assets -= other_payment  # Use savings if needed
+                
+                if bank_payment > 0:
+                    self.record_transaction(bank_payment, "Bank", model)
+                if other_payment > 0:
+                    self.record_transaction(other_payment, "Other", model)
+        else:
+            # Non-adopters use traditional banking for all transactions
+            bank_payment = min(total_spending, self.bank_deposits)
+            other_payment = total_spending - bank_payment
+            
+            self.bank_deposits -= bank_payment
+            self.other_assets -= other_payment
+            
+            if bank_payment > 0:
+                self.record_transaction(bank_payment, "Bank", model)
+            if other_payment > 0:
+                self.record_transaction(other_payment, "Other", model)
+    
+    def record_transaction(self, amount, payment_method, model):
+        """Record transaction for analysis and tracking."""
+        # Track transaction volumes by payment method
+        if not hasattr(model, 'transaction_volumes'):
+            model.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
+        
+        if not hasattr(model, 'transaction_counts'):
+            model.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
+        
+        model.transaction_volumes[payment_method] += amount
+        model.transaction_counts[payment_method] += 1
+        
+        # Track monthly totals for step-by-step analysis
+        current_step = model.current_step
+        if not hasattr(model, 'monthly_transactions'):
+            model.monthly_transactions = {}
+        
+        if current_step not in model.monthly_transactions:
+            model.monthly_transactions[current_step] = {"Bank": 0, "CBDC": 0, "Other": 0}
+        
+        model.monthly_transactions[current_step][payment_method] += amount
+
     def update_banking_relationship(self):
         """Update relationship with primary bank."""
         if self.primary_bank:

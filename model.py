@@ -135,6 +135,11 @@ class CBDCBankingModel(Model):
         # Initialize 2025-calibrated balance sheets for all banks
         self.initialize_bank_balance_sheets()
         
+        # Transaction tracking for payment method analysis
+        self.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
+        self.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
+        self.monthly_transactions = {}
+        
         # Data collection
         self.datacollector = DataCollector(
             model_reporters={
@@ -154,7 +159,13 @@ class CBDCBankingModel(Model):
                 # H4: Network connectivity
                 "Banking_Network_Density": self.compute_network_density,
                 # H6: Central bank centrality
-                "Central_Bank_Centrality": self.compute_central_bank_centrality
+                "Central_Bank_Centrality": self.compute_central_bank_centrality,
+                # Transaction volume metrics
+                "Bank_Transaction_Volume": lambda m: m.monthly_transactions.get(m.current_step, {}).get("Bank", 0),
+                "CBDC_Transaction_Volume": lambda m: m.monthly_transactions.get(m.current_step, {}).get("CBDC", 0),
+                "Other_Transaction_Volume": lambda m: m.monthly_transactions.get(m.current_step, {}).get("Other", 0),
+                "Total_Transaction_Volume": self.compute_total_transaction_volume,
+                "CBDC_Transaction_Share": self.compute_cbdc_transaction_share
             },
             agent_reporters={
                 "AgentID": lambda a: f"{type(a).__name__}_{a.unique_id}",
@@ -368,6 +379,67 @@ class CBDCBankingModel(Model):
                     bank.total_loans -= additional_cash  # Reduce loans to balance
                     bank.calculate_metrics()  # Recalculate
     
+    def compute_total_transaction_volume(self):
+        """Compute total transaction volume for current step."""
+        current_transactions = self.monthly_transactions.get(self.current_step, {})
+        return sum(current_transactions.values())
+    
+    def compute_cbdc_transaction_share(self):
+        """Compute CBDC's share of total transaction volume."""
+        current_transactions = self.monthly_transactions.get(self.current_step, {})
+        total_volume = sum(current_transactions.values())
+        cbdc_volume = current_transactions.get("CBDC", 0)
+        
+        return (cbdc_volume / total_volume * 100) if total_volume > 0 else 0
+    
+    def get_transaction_analysis(self):
+        """Get comprehensive transaction analysis before and after CBDC."""
+        if not self.monthly_transactions:
+            return {}
+        
+        # Pre-CBDC analysis (steps before introduction)
+        pre_cbdc_steps = [step for step in self.monthly_transactions.keys() if step < self.cbdc_introduction_step]
+        post_cbdc_steps = [step for step in self.monthly_transactions.keys() if step >= self.cbdc_introduction_step]
+        
+        def analyze_period(steps):
+            if not steps:
+                return {"bank_volume": 0, "cbdc_volume": 0, "other_volume": 0, "total_volume": 0}
+            
+            bank_total = sum(self.monthly_transactions[step].get("Bank", 0) for step in steps)
+            cbdc_total = sum(self.monthly_transactions[step].get("CBDC", 0) for step in steps)
+            other_total = sum(self.monthly_transactions[step].get("Other", 0) for step in steps)
+            
+            return {
+                "bank_volume": bank_total,
+                "cbdc_volume": cbdc_total,
+                "other_volume": other_total,
+                "total_volume": bank_total + cbdc_total + other_total
+            }
+        
+        pre_cbdc = analyze_period(pre_cbdc_steps)
+        post_cbdc = analyze_period(post_cbdc_steps)
+        
+        # Calculate substitution metrics
+        substitution_analysis = {}
+        if pre_cbdc["total_volume"] > 0 and post_cbdc["total_volume"] > 0:
+            pre_bank_share = pre_cbdc["bank_volume"] / pre_cbdc["total_volume"] * 100
+            post_bank_share = post_cbdc["bank_volume"] / post_cbdc["total_volume"] * 100
+            post_cbdc_share = post_cbdc["cbdc_volume"] / post_cbdc["total_volume"] * 100
+            
+            substitution_analysis = {
+                "pre_cbdc_bank_share": pre_bank_share,
+                "post_cbdc_bank_share": post_bank_share,
+                "post_cbdc_cbdc_share": post_cbdc_share,
+                "transaction_substitution_rate": pre_bank_share - post_bank_share
+            }
+        
+        return {
+            "pre_cbdc_period": pre_cbdc,
+            "post_cbdc_period": post_cbdc,
+            "substitution_analysis": substitution_analysis,
+            "cbdc_introduction_step": self.cbdc_introduction_step
+        }
+
     # H6: Central bank centrality computation
     def compute_central_bank_centrality(self):
         """Compute central bank's network centrality (H6)."""
