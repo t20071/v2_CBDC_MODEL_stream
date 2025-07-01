@@ -9,7 +9,7 @@ class CentralBank(Agent):
     through interest rates and policy measures.
     """
     
-    def __init__(self, unique_id, model, cbdc_interest_rate=0.045, initial_cbdc_supply=0):
+    def __init__(self, unique_id, model, cbdc_interest_rate=0.052, initial_cbdc_supply=0):
         super().__init__(model)
         
         # Store agent properties

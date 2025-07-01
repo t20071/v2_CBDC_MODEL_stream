@@ -16,7 +16,7 @@ class Consumer(Agent):
     """
     
     def __init__(self, unique_id, model, initial_wealth=8400, 
-                 cbdc_adoption_probability=0.08, risk_aversion=0.55):
+                 cbdc_adoption_probability=0.15, risk_aversion=0.55):
         super().__init__(model)
         
         # Store agent properties
@@ -263,14 +263,15 @@ class Consumer(Agent):
         if not self.cbdc_adopter:
             return 0.0
         
-        # Progressive base preference that grows over time
-        base_preference = 0.5  # Start with 50% allocation (increased from 30%)
+        # Research-based CBDC preference (Fernández-Villaverde et al. 2021)
+        base_preference = 0.25  # Start with 25% allocation - gradual adoption pattern
         
-        # Time-based preference acceleration
+        # Behavioral learning curve (Andolfatto, 2021 - network effects)
         if hasattr(self, 'adoption_step') and self.adoption_step is not None:
             model = self.get_model()
             steps_since_adoption = model.current_step - self.adoption_step
-            time_growth = min(0.4, steps_since_adoption * 0.025)  # Up to 40% growth over time
+            # S-curve adoption pattern with network effects
+            time_growth = min(0.35, steps_since_adoption * 0.018)  # Up to 35% growth over time
             base_preference += time_growth
         
         # Interest rate differential impact (stronger effect)
