@@ -37,6 +37,10 @@ class CentralBank(Agent):
         # CBDC supply tracking
         self.total_supply_expansions = 0
         self.cumulative_supply_expansion = 0
+        
+        # CBDC exchange operations (1:1 exchange with commercial bank deposits)
+        self.central_bank_deposits = 0  # Deposits received from commercial banks for CBDC exchanges
+        self.total_cbdc_issued = 0      # Total CBDC issued through exchanges
     
     def step(self):
         """Execute one step of central bank operations."""
@@ -167,30 +171,52 @@ class CentralBank(Agent):
                 bank.reserves += emergency_liquidity
                 bank.capital += emergency_liquidity  # Assume this is emergency funding
     
-    def update_cbdc_outstanding(self):
-        """Update the total CBDC outstanding in the economy and expand supply to meet demand."""
+    def process_cbdc_exchanges(self):
+        """Process 1:1 CBDC exchanges with commercial banks."""
         # Calculate current CBDC demand (total holdings by consumers)
         current_demand = sum(
             consumer.cbdc_holdings for consumer in self.model.consumers
             if hasattr(consumer, 'cbdc_holdings')
         )
         
-        # Expand supply to exactly match demand - central bank accommodates all demand
-        if current_demand > self.cbdc_supply:
-            previous_supply = self.cbdc_supply
-            self.cbdc_supply = current_demand
-            supply_expansion = self.cbdc_supply - previous_supply
-            
-            if supply_expansion > 0:
-                # Track supply expansions for analysis
-                self.total_supply_expansions += 1
-                self.cumulative_supply_expansion += supply_expansion
-                
-                print(f"Central Bank expanded CBDC supply by ${supply_expansion:,.0f} to meet demand")
-                print(f"Total CBDC supply now: ${self.cbdc_supply:,.0f}")
+        # Calculate new CBDC to be issued (exchange-based, not expansion)
+        new_cbdc_needed = current_demand - self.cbdc_outstanding
         
-        # Update outstanding amount (should equal supply in demand-driven system)
-        self.cbdc_outstanding = current_demand
+        if new_cbdc_needed > 0:
+            # Issue new CBDC through 1:1 exchange with bank deposits
+            self.cbdc_outstanding = current_demand
+            self.central_bank_deposits += new_cbdc_needed  # Receive equivalent deposits from banks
+            self.total_cbdc_issued += new_cbdc_needed
+            
+            # Notify commercial banks to transfer deposits to central bank
+            self.collect_deposits_for_cbdc_exchange(new_cbdc_needed)
+            
+            print(f"Central Bank issued ${new_cbdc_needed:,.0f} CBDC through 1:1 exchange")
+            print(f"Total CBDC outstanding: ${self.cbdc_outstanding:,.0f}")
+            print(f"Central Bank deposits from exchanges: ${self.central_bank_deposits:,.0f}")
+    
+    def collect_deposits_for_cbdc_exchange(self, exchange_amount):
+        """Collect deposits from commercial banks for CBDC exchanges."""
+        total_outflows = sum(
+            getattr(bank, 'cbdc_related_outflows', 0) 
+            for bank in self.model.commercial_banks
+        )
+        
+        if total_outflows > 0:
+            # Proportionally collect deposits from banks based on their CBDC outflows
+            for bank in self.model.commercial_banks:
+                bank_outflows = getattr(bank, 'cbdc_related_outflows', 0)
+                if bank_outflows > 0:
+                    bank_share = bank_outflows / total_outflows
+                    bank_transfer = exchange_amount * bank_share
+                    
+                    # Bank transfers reserves to central bank
+                    bank.cash_reserves = max(0, bank.cash_reserves - bank_transfer)
+                    bank.reserves_transferred_to_cb = getattr(bank, 'reserves_transferred_to_cb', 0) + bank_transfer
+    
+    def update_cbdc_outstanding(self):
+        """Update CBDC outstanding (calls new exchange-based method)."""
+        self.process_cbdc_exchanges()
     
     def get_cbdc_promotion_effectiveness(self):
         """Assess how well CBDC promotion is working."""

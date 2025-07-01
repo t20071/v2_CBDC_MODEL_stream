@@ -64,6 +64,10 @@ class CommercialBank(Agent):
         
         self.customers = []
         
+        # CBDC exchange tracking
+        self.cbdc_related_outflows = 0      # Total deposits lost to CBDC exchanges
+        self.reserves_transferred_to_cb = 0 # Reserves transferred to central bank for CBDC
+        
         # 2025-calibrated performance metrics
         self.liquidity_ratio = 1.0  # Will be calculated dynamically
         self.loan_to_deposit_ratio = 0.0  # Will track against target
@@ -132,11 +136,33 @@ class CommercialBank(Agent):
             self.customers.remove(consumer)
     
     def update_deposits(self):
-        """Update total deposits from all customers."""
-        self.total_deposits = sum(
+        """Update total deposits from all customers and track CBDC-related outflows."""
+        # Calculate current customer deposits
+        current_customer_deposits = sum(
             customer.bank_deposits for customer in self.customers
             if hasattr(customer, 'bank_deposits')
         )
+        
+        # Track deposit changes (likely due to CBDC exchanges)
+        previous_deposits = getattr(self, 'total_deposits', current_customer_deposits)
+        deposit_change = current_customer_deposits - previous_deposits
+        
+        if deposit_change < 0:  # Deposits decreased
+            deposit_outflow = abs(deposit_change)
+            # Track as CBDC-related outflow (customers exchanging deposits for CBDC)
+            self.cbdc_related_outflows = getattr(self, 'cbdc_related_outflows', 0) + deposit_outflow
+        
+        # Update total deposits
+        self.total_deposits = current_customer_deposits
+        
+        # Update demand/time deposit composition
+        if self.total_deposits > 0:
+            if self.bank_type == "large":
+                self.demand_deposits = self.total_deposits * 0.60
+                self.time_deposits = self.total_deposits * 0.40
+            else:
+                self.demand_deposits = self.total_deposits * 0.70
+                self.time_deposits = self.total_deposits * 0.30
     
     def make_loans(self):
         """Make loans based on available liquidity."""
