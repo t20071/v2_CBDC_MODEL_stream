@@ -109,7 +109,7 @@ class Consumer(Agent):
             self.other_assets += other_allocation
         
         # Monthly consumer-to-consumer transactions (research-based volume)
-        monthly_spending = self.wealth * self.spending_rate  # 12% monthly spending
+        monthly_spending = self.wealth * self.spending_rate  # 8% monthly spending
         self.execute_monthly_transactions(monthly_spending)
         
         # Reduce wealth by spending amount

@@ -247,8 +247,8 @@ def display_results():
     
     fig_wealth.update_layout(
         title="Consumer Wealth Allocation Over Time (% of Total Wealth)",
-        xaxis_title="Simulation Step",
-        yaxis_title="Percentage of Total Consumer Wealth",
+        xaxis_title="Month",
+        yaxis_title="Currency Holdings (units)",
         yaxis=dict(range=[0, 100]),
         height=500
     )

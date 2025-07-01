@@ -37,9 +37,9 @@ class CBDCBankingModel(Model):
     cbdc_introduction_step: int
     
     def __init__(self, n_consumers=200, n_commercial_banks=8, 
-                 cbdc_introduction_step=12, cbdc_adoption_rate=0.15,
-                 cbdc_attractiveness=1.8, initial_consumer_wealth=8400,
-                 bank_interest_rate=0.048, cbdc_interest_rate=0.052):
+                 cbdc_introduction_step=12, cbdc_adoption_rate=0.20,
+                 cbdc_attractiveness=2.2, initial_consumer_wealth=8400,
+                 bank_interest_rate=0.048, cbdc_interest_rate=0.055):
         
         super().__init__()
         
