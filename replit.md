@@ -24,6 +24,7 @@ The application follows a Model-View architecture pattern:
 1. **CentralBank** (`agent/central_bank.py`): Manages CBDC introduction, monetary policy, and system monitoring
 2. **CommercialBank** (`agent/commercial_bank.py`): Handles deposits, loans, and competitive responses to CBDC
 3. **Consumer** (`agent/consumer.py`): Makes financial decisions between traditional banking and CBDC
+4. **Merchant** (`agent/merchant.py`): Represents businesses accepting payments with realistic transaction scenarios
 
 ### Model Framework
 - **CBDCBankingModel** (`model.py`): Main simulation engine that orchestrates agent interactions
@@ -116,6 +117,7 @@ Changelog:
 - June 27, 2025. Implemented 2025-calibrated bank balance sheets as initial conditions (Basel III compliance, realistic asset/liability structure)
 - June 30, 2025. Clarified balance sheet initialization process: banks start with zero values, then get realistic 2025-calibrated portfolios after customer assignment in initialize_bank_balance_sheets()
 - July 1, 2025. Enhanced network analysis with multiple centrality measures: Added Degree, Betweenness, Closeness, and Eigenvector centrality tracking for both commercial banks and central bank, with comprehensive visualization dashboard
+- July 4, 2025. Implemented comprehensive Merchant agent system with real-world economic scenarios: Added 5 business types (retail, restaurant, online, utility, grocery), realistic payment processing costs, dynamic economic conditions tracking, and consumer-merchant transaction flows
 ```
 
 ## User Preferences
