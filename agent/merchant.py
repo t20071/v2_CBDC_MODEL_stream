@@ -27,6 +27,15 @@ class Merchant(Agent):
         self.primary_bank = payment_processing_bank
         self.business_deposits = initial_revenue * 0.2  # 20% of revenue as working capital
         
+        # Payment balances for consumer transactions
+        self.bank_account_balance = 0  # Traditional bank account for payments
+        self.cbdc_wallet_balance = 0  # CBDC wallet for direct payments
+        self.cash_balance = 0  # Cash payments
+        
+        # CBDC adoption status
+        self.accepts_cbdc = False
+        self.cbdc_adoption_date = None
+        
         # Payment method preferences and costs
         self.setup_payment_preferences()
         
@@ -126,6 +135,9 @@ class Merchant(Agent):
     
     def step(self):
         """Execute one step of merchant operations."""
+        # Consider CBDC adoption
+        self.consider_cbdc_adoption()
+        
         # Process daily transactions with consumers
         self.process_daily_transactions()
         
@@ -140,6 +152,58 @@ class Merchant(Agent):
         
         # Update network position in business ecosystem
         self.update_network_position()
+    
+    def consider_cbdc_adoption(self):
+        """Consider adopting CBDC for customer payments."""
+        # Only consider if CBDC is available and not already adopted
+        if self.accepts_cbdc or not hasattr(self.model, 'cbdc_introduced'):
+            return
+        
+        if not self.model.cbdc_introduced:
+            return
+        
+        # Check consumer adoption rate to determine business pressure
+        cbdc_adoption_rate = self.model.compute_cbdc_adoption_rate()
+        
+        # Base adoption probability based on technology adoption rate
+        adoption_probability = self.technology_adoption_rate
+        
+        # Customer pressure increases adoption probability
+        customer_pressure = cbdc_adoption_rate * self.customer_payment_influence
+        adoption_probability += customer_pressure
+        
+        # Business type influences adoption speed
+        business_type_multipliers = {
+            "online": 1.8,     # Online businesses adopt faster
+            "retail": 1.2,     # Retail moderate adoption
+            "restaurant": 1.0,  # Restaurant moderate adoption
+            "grocery": 1.1,    # Grocery moderate adoption
+            "utility": 0.8     # Utilities slower adoption
+        }
+        
+        multiplier = business_type_multipliers.get(self.business_type, 1.0)
+        adoption_probability *= multiplier
+        
+        # Size matters - larger businesses adopt faster
+        size_multipliers = {"small": 0.8, "medium": 1.0, "large": 1.5}
+        size_multiplier = size_multipliers.get(self.size, 1.0)
+        adoption_probability *= size_multiplier
+        
+        # Random adoption decision
+        if np.random.random() < adoption_probability:
+            self.adopt_cbdc()
+    
+    def adopt_cbdc(self):
+        """Adopt CBDC payment acceptance."""
+        self.accepts_cbdc = True
+        self.cbdc_adoption_date = self.model.current_step
+        
+        # Initialize CBDC wallet if not already done
+        if not hasattr(self, 'cbdc_wallet_balance'):
+            self.cbdc_wallet_balance = 0
+        
+        # Adjust payment preferences to include CBDC
+        self.payment_preferences["cbdc"] = 0.85  # High preference for CBDC due to lower costs
     
     def process_daily_transactions(self):
         """Process daily transactions with consumers."""

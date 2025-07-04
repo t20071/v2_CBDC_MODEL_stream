@@ -253,6 +253,13 @@ class CBDCBankingModel(Model):
             }
         )
         
+        # Initialize transaction tracking
+        self.transaction_volumes = {
+            "Bank": 0, "CBDC": 0, "Other": 0, 
+            "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+        }
+        self.monthly_transactions = {0: self.transaction_volumes.copy()}
+        
         # Collect initial data
         self.datacollector.collect(self)
     

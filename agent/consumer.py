@@ -61,6 +61,12 @@ class Consumer(Agent):
         
         self.spending_rate = np.random.normal(0.015, 0.005)  # Monthly spending rate
         self.spending_rate = max(0.005, min(0.03, self.spending_rate))
+        
+        # Shopping and payment behavior
+        self.monthly_spending = initial_wealth * 0.15  # 15% of wealth spent monthly
+        self.cbdc_wallet_balance = 0  # CBDC wallet for direct merchant payments
+        self.transaction_history = []  # Track payment methods used
+        self.preferred_payment_method = "bank_transfer"  # Default before CBDC
     
     def get_model(self) -> 'CBDCBankingModel':
         """Get model with proper typing"""
@@ -72,6 +78,9 @@ class Consumer(Agent):
         # Economic activities (income and spending)
         self.economic_activity()
         
+        # Shopping with merchants
+        self.conduct_merchant_transactions()
+        
         # CBDC adoption decision
         if self.cbdc_available and not self.cbdc_adopter:
             self.consider_cbdc_adoption()
@@ -82,6 +91,121 @@ class Consumer(Agent):
         
         # Update bank relationship
         self.update_banking_relationship()
+
+    def conduct_merchant_transactions(self):
+        """Handle consumer purchases from merchants with payment method selection."""
+        model = self.get_model()
+        
+        # Calculate transaction budget based on wealth and spending patterns
+        transaction_budget = self.wealth * 0.003  # 0.3% of wealth per step for transactions
+        
+        if transaction_budget < 1:
+            return
+        
+        # Select merchants for transactions
+        if not hasattr(model, 'merchants') or len(model.merchants) == 0:
+            return
+        
+        num_transactions = max(1, int(np.random.poisson(2)))  # Average 2 transactions per step
+        
+        for _ in range(num_transactions):
+            if transaction_budget <= 1:
+                break
+            
+            # Select random merchant
+            merchant = random.choice(model.merchants)
+            
+            # Determine transaction size based on merchant type
+            if merchant.business_type == "grocery":
+                transaction_size = min(transaction_budget, max(5, np.random.normal(40, 15)))
+            elif merchant.business_type == "restaurant":
+                transaction_size = min(transaction_budget, max(5, np.random.normal(25, 10)))
+            elif merchant.business_type == "retail":
+                transaction_size = min(transaction_budget, max(5, np.random.normal(60, 25)))
+            elif merchant.business_type == "utility":
+                transaction_size = min(transaction_budget, max(10, np.random.normal(100, 20)))
+            elif merchant.business_type == "online":
+                transaction_size = min(transaction_budget, max(5, np.random.normal(80, 35)))
+            else:
+                transaction_size = min(transaction_budget, max(5, np.random.normal(30, 15)))
+            
+            transaction_size = max(1, transaction_size)
+            
+            # Determine payment method
+            payment_method = self.select_payment_method_for_transaction(transaction_size, merchant)
+            
+            # Execute transaction
+            if self.execute_transaction(transaction_size, payment_method, merchant):
+                transaction_budget -= transaction_size
+    
+    def select_payment_method_for_transaction(self, transaction_size, merchant):
+        """Select payment method for transaction with specific merchant."""
+        model = self.get_model()
+        
+        # Check if CBDC is available and adopted
+        if self.cbdc_adopter and hasattr(model, 'cbdc_introduced') and model.cbdc_introduced:
+            # Check if merchant accepts CBDC
+            if hasattr(merchant, 'accepts_cbdc') and merchant.accepts_cbdc:
+                # Prefer CBDC for direct peer-to-peer transactions
+                if self.cbdc_holdings >= transaction_size:
+                    return "CBDC_DIRECT"
+            
+            # If merchant doesn't accept CBDC or insufficient CBDC, use bank transfer
+            if self.bank_deposits >= transaction_size:
+                return "BANK_TRANSFER"
+        
+        # Before CBDC or non-adopters use traditional methods
+        if self.bank_deposits >= transaction_size:
+            return "BANK_TRANSFER"
+        elif self.other_assets >= transaction_size:
+            return "CASH"
+        else:
+            return "INSUFFICIENT_FUNDS"
+    
+    def execute_transaction(self, amount, payment_method, merchant):
+        """Execute transaction with specified payment method."""
+        model = self.get_model()
+        
+        if payment_method == "CBDC_DIRECT":
+            # Direct CBDC payment to merchant's wallet
+            if self.cbdc_holdings >= amount:
+                self.cbdc_holdings -= amount
+                # Add to merchant's CBDC wallet
+                if hasattr(merchant, 'cbdc_wallet_balance'):
+                    merchant.cbdc_wallet_balance += amount
+                else:
+                    merchant.cbdc_wallet_balance = amount
+                
+                self.record_transaction(amount, "CBDC_DIRECT", model)
+                return True
+        
+        elif payment_method == "BANK_TRANSFER":
+            # Traditional bank transfer to merchant's bank account
+            if self.bank_deposits >= amount:
+                self.bank_deposits -= amount
+                # Add to merchant's bank account
+                if hasattr(merchant, 'bank_account_balance'):
+                    merchant.bank_account_balance += amount
+                else:
+                    merchant.bank_account_balance = amount
+                
+                self.record_transaction(amount, "BANK_TRANSFER", model)
+                return True
+        
+        elif payment_method == "CASH":
+            # Cash payment (deducted from other assets)
+            if self.other_assets >= amount:
+                self.other_assets -= amount
+                # Add to merchant's cash
+                if hasattr(merchant, 'cash_balance'):
+                    merchant.cash_balance += amount
+                else:
+                    merchant.cash_balance = amount
+                
+                self.record_transaction(amount, "CASH", model)
+                return True
+        
+        return False
     
     def economic_activity(self):
         """Handle regular economic activities - income and spending."""
@@ -425,25 +549,63 @@ class Consumer(Agent):
     
     def record_transaction(self, amount, payment_method, model):
         """Record transaction for analysis and tracking."""
-        # Track transaction volumes by payment method
+        # Initialize transaction tracking if needed
         if not hasattr(model, 'transaction_volumes'):
-            model.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
+            model.transaction_volumes = {
+                "Bank": 0, "CBDC": 0, "Other": 0, 
+                "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+            }
         
         if not hasattr(model, 'transaction_counts'):
-            model.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
+            model.transaction_counts = {
+                "Bank": 0, "CBDC": 0, "Other": 0,
+                "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+            }
         
+        # Ensure the payment method exists in tracking
+        if payment_method not in model.transaction_volumes:
+            model.transaction_volumes[payment_method] = 0
+            model.transaction_counts[payment_method] = 0
+        
+        # Record transaction
         model.transaction_volumes[payment_method] += amount
         model.transaction_counts[payment_method] += 1
         
-        # Track monthly totals for step-by-step analysis
+        # Map to legacy categories for compatibility
+        legacy_mapping = {
+            "BANK_TRANSFER": "Bank",
+            "CBDC_DIRECT": "CBDC", 
+            "CASH": "Other"
+        }
+        
+        if payment_method in legacy_mapping:
+            legacy_method = legacy_mapping[payment_method]
+            model.transaction_volumes[legacy_method] += amount
+            model.transaction_counts[legacy_method] += 1
+        
+        # Track monthly totals for step-by-step analysis  
         current_step = model.current_step
         if not hasattr(model, 'monthly_transactions'):
             model.monthly_transactions = {}
         
         if current_step not in model.monthly_transactions:
-            model.monthly_transactions[current_step] = {"Bank": 0, "CBDC": 0, "Other": 0}
+            model.monthly_transactions[current_step] = {
+                "Bank": 0, "CBDC": 0, "Other": 0,
+                "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+            }
+        
+        # Ensure payment method exists in monthly tracking
+        if payment_method not in model.monthly_transactions[current_step]:
+            model.monthly_transactions[current_step][payment_method] = 0
         
         model.monthly_transactions[current_step][payment_method] += amount
+        
+        # Also update legacy category
+        if payment_method in legacy_mapping:
+            legacy_method = legacy_mapping[payment_method]
+            if legacy_method not in model.monthly_transactions[current_step]:
+                model.monthly_transactions[current_step][legacy_method] = 0
+            model.monthly_transactions[current_step][legacy_method] += amount
 
     def update_banking_relationship(self):
         """Update relationship with primary bank."""
