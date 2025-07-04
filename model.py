@@ -154,12 +154,31 @@ class CBDCBankingModel(Model):
                 "Average_Bank_Centrality": self.compute_average_bank_centrality,
                 "Small_Bank_Centrality": self.compute_small_bank_centrality,
                 "Large_Bank_Centrality": self.compute_large_bank_centrality,
+                # Extended centrality measures
+                "Average_Degree_Centrality": self.compute_average_degree_centrality,
+                "Average_Betweenness_Centrality": self.compute_average_betweenness_centrality,
+                "Average_Closeness_Centrality": self.compute_average_closeness_centrality,
+                "Average_Eigenvector_Centrality": self.compute_average_eigenvector_centrality,
+                # Large bank centrality measures
+                "Large_Bank_Degree_Centrality": self.compute_large_bank_degree_centrality,
+                "Large_Bank_Betweenness_Centrality": self.compute_large_bank_betweenness_centrality,
+                "Large_Bank_Closeness_Centrality": self.compute_large_bank_closeness_centrality,
+                "Large_Bank_Eigenvector_Centrality": self.compute_large_bank_eigenvector_centrality,
+                # Small bank centrality measures
+                "Small_Bank_Degree_Centrality": self.compute_small_bank_degree_centrality,
+                "Small_Bank_Betweenness_Centrality": self.compute_small_bank_betweenness_centrality,
+                "Small_Bank_Closeness_Centrality": self.compute_small_bank_closeness_centrality,
+                "Small_Bank_Eigenvector_Centrality": self.compute_small_bank_eigenvector_centrality,
                 # H3: Systemic risk metrics
                 "Average_Liquidity_Stress": self.compute_average_liquidity_stress,
                 # H4: Network connectivity
                 "Banking_Network_Density": self.compute_network_density,
                 # H6: Central bank centrality
                 "Central_Bank_Centrality": self.compute_central_bank_centrality,
+                "Central_Bank_Degree_Centrality": self.compute_central_bank_degree_centrality,
+                "Central_Bank_Betweenness_Centrality": self.compute_central_bank_betweenness_centrality,
+                "Central_Bank_Closeness_Centrality": self.compute_central_bank_closeness_centrality,
+                "Central_Bank_Eigenvector_Centrality": self.compute_central_bank_eigenvector_centrality,
                 # Transaction volume metrics
                 "Bank_Transaction_Volume": lambda m: m.monthly_transactions.get(m.current_step, {}).get("Bank", 0),
                 "CBDC_Transaction_Volume": lambda m: m.monthly_transactions.get(m.current_step, {}).get("CBDC", 0),
@@ -243,6 +262,10 @@ class CBDCBankingModel(Model):
         """Compute total deposits across all commercial banks."""
         return sum(bank.total_deposits for bank in self.commercial_banks)
     
+    def compute_total_consumer_wealth(self):
+        """Compute total wealth across all consumers."""
+        return sum(consumer.wealth for consumer in self.consumers)
+    
     def compute_total_bank_loans(self):
         """Compute total loans across all commercial banks."""
         return sum(bank.total_loans for bank in self.commercial_banks)
@@ -279,6 +302,106 @@ class CBDCBankingModel(Model):
         if not large_banks:
             return 0.0
         return sum(bank.network_centrality for bank in large_banks) / len(large_banks)
+    
+    # Extended centrality measures for comprehensive network analysis
+    def compute_average_degree_centrality(self):
+        """Compute average degree centrality across all commercial banks."""
+        if not self.commercial_banks:
+            return 0.0
+        return sum(bank.degree_centrality for bank in self.commercial_banks) / len(self.commercial_banks)
+    
+    def compute_average_betweenness_centrality(self):
+        """Compute average betweenness centrality across all commercial banks."""
+        if not self.commercial_banks:
+            return 0.0
+        return sum(bank.betweenness_centrality for bank in self.commercial_banks) / len(self.commercial_banks)
+    
+    def compute_average_closeness_centrality(self):
+        """Compute average closeness centrality across all commercial banks."""
+        if not self.commercial_banks:
+            return 0.0
+        return sum(bank.closeness_centrality for bank in self.commercial_banks) / len(self.commercial_banks)
+    
+    def compute_average_eigenvector_centrality(self):
+        """Compute average eigenvector centrality across all commercial banks."""
+        if not self.commercial_banks:
+            return 0.0
+        return sum(bank.eigenvector_centrality for bank in self.commercial_banks) / len(self.commercial_banks)
+    
+    # Large bank specific centrality measures
+    def compute_large_bank_degree_centrality(self):
+        """Compute average degree centrality for large banks."""
+        large_banks = [bank for bank in self.commercial_banks if bank.bank_type == "large"]
+        if not large_banks:
+            return 0.0
+        return sum(bank.degree_centrality for bank in large_banks) / len(large_banks)
+    
+    def compute_large_bank_betweenness_centrality(self):
+        """Compute average betweenness centrality for large banks."""
+        large_banks = [bank for bank in self.commercial_banks if bank.bank_type == "large"]
+        if not large_banks:
+            return 0.0
+        return sum(bank.betweenness_centrality for bank in large_banks) / len(large_banks)
+    
+    def compute_large_bank_closeness_centrality(self):
+        """Compute average closeness centrality for large banks."""
+        large_banks = [bank for bank in self.commercial_banks if bank.bank_type == "large"]
+        if not large_banks:
+            return 0.0
+        return sum(bank.closeness_centrality for bank in large_banks) / len(large_banks)
+    
+    def compute_large_bank_eigenvector_centrality(self):
+        """Compute average eigenvector centrality for large banks."""
+        large_banks = [bank for bank in self.commercial_banks if bank.bank_type == "large"]
+        if not large_banks:
+            return 0.0
+        return sum(bank.eigenvector_centrality for bank in large_banks) / len(large_banks)
+    
+    # Small bank specific centrality measures
+    def compute_small_bank_degree_centrality(self):
+        """Compute average degree centrality for small and medium banks."""
+        small_banks = [bank for bank in self.commercial_banks if bank.bank_type == "small_medium"]
+        if not small_banks:
+            return 0.0
+        return sum(bank.degree_centrality for bank in small_banks) / len(small_banks)
+    
+    def compute_small_bank_betweenness_centrality(self):
+        """Compute average betweenness centrality for small and medium banks."""
+        small_banks = [bank for bank in self.commercial_banks if bank.bank_type == "small_medium"]
+        if not small_banks:
+            return 0.0
+        return sum(bank.betweenness_centrality for bank in small_banks) / len(small_banks)
+    
+    def compute_small_bank_closeness_centrality(self):
+        """Compute average closeness centrality for small and medium banks."""
+        small_banks = [bank for bank in self.commercial_banks if bank.bank_type == "small_medium"]
+        if not small_banks:
+            return 0.0
+        return sum(bank.closeness_centrality for bank in small_banks) / len(small_banks)
+    
+    def compute_small_bank_eigenvector_centrality(self):
+        """Compute average eigenvector centrality for small and medium banks."""
+        small_banks = [bank for bank in self.commercial_banks if bank.bank_type == "small_medium"]
+        if not small_banks:
+            return 0.0
+        return sum(bank.eigenvector_centrality for bank in small_banks) / len(small_banks)
+    
+    # Central bank centrality measures (H6)
+    def compute_central_bank_degree_centrality(self):
+        """Compute central bank degree centrality (H6)."""
+        return self.central_bank.degree_centrality
+    
+    def compute_central_bank_betweenness_centrality(self):
+        """Compute central bank betweenness centrality (H6)."""
+        return self.central_bank.betweenness_centrality
+    
+    def compute_central_bank_closeness_centrality(self):
+        """Compute central bank closeness centrality (H6)."""
+        return self.central_bank.closeness_centrality
+    
+    def compute_central_bank_eigenvector_centrality(self):
+        """Compute central bank eigenvector centrality (H6)."""
+        return self.central_bank.eigenvector_centrality
     
     # H3: Systemic risk computation
     def compute_average_liquidity_stress(self):

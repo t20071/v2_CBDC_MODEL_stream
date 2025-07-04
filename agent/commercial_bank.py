@@ -23,7 +23,12 @@ class CommercialBank(Agent):
         self.initial_capital = initial_capital
         self.reserve_requirement = reserve_requirement
         self.bank_type = bank_type  # "large" or "small_medium"
-        self.network_centrality = network_centrality  # H1: Network centrality metric
+        # H1: Multiple network centrality metrics
+        self.network_centrality = network_centrality  # General economic centrality
+        self.degree_centrality = 0.0       # Number of direct connections
+        self.betweenness_centrality = 0.0  # Intermediary position strength
+        self.closeness_centrality = 0.0    # Proximity to all other nodes
+        self.eigenvector_centrality = 0.0  # Influence based on connections' importance
         
         # 2025-calibrated balance sheet structure
         self.capital = initial_capital
@@ -101,6 +106,9 @@ class CommercialBank(Agent):
             self.cbdc_vulnerability = 0.25  # Lower vulnerability (stronger competitive position)
             self.customer_stickiness = 0.80  # Strong brand loyalty and services
             self.digital_capability = 0.90   # Advanced fintech integration
+        
+        # Initialize centrality measures
+        self.initialize_centrality_measures()
     
     def step(self):
         """Execute one step of bank operations."""
@@ -273,6 +281,9 @@ class CommercialBank(Agent):
             decay_rate = min(0.05, centrality_impact * 0.03)  # Max 5% decay per step
             self.network_centrality = max(0.05, self.network_centrality - decay_rate)
             
+            # Update multiple centrality measures
+            self.update_all_centrality_measures(cbdc_adoption_rate, customer_loss_rate)
+            
             # H4: Reduce interbank connections as CBDC provides alternative
             if cbdc_adoption_rate > 0.2:  # When CBDC adoption exceeds 20%
                 connection_impact = (cbdc_adoption_rate - 0.2) * 0.15
@@ -281,6 +292,53 @@ class CommercialBank(Agent):
                 
                 connection_loss = connection_impact * 0.1  # Gradual loss
                 self.interbank_connections = max(0, self.interbank_connections - connection_loss)
+    
+    def update_all_centrality_measures(self, cbdc_adoption_rate, customer_loss_rate):
+        """Update all centrality measures based on CBDC impact."""
+        # Base impact factors
+        base_impact = cbdc_adoption_rate * self.cbdc_vulnerability * (1 + customer_loss_rate)
+        small_bank_multiplier = 2.0 if self.bank_type == "small_medium" else 1.0
+        
+        # Degree Centrality: Direct connections (banking relationships)
+        degree_impact = base_impact * small_bank_multiplier * 0.8  # Strong impact on direct connections
+        degree_decay = min(0.08, degree_impact * 0.04)  # Max 8% decay per step
+        self.degree_centrality = max(0.05, self.degree_centrality - degree_decay)
+        
+        # Betweenness Centrality: Intermediary role in financial flows
+        betweenness_impact = base_impact * small_bank_multiplier * 1.2  # Highest impact - CBDC bypasses intermediation
+        betweenness_decay = min(0.10, betweenness_impact * 0.05)  # Max 10% decay per step
+        self.betweenness_centrality = max(0.02, self.betweenness_centrality - betweenness_decay)
+        
+        # Closeness Centrality: Proximity to all network nodes
+        closeness_impact = base_impact * small_bank_multiplier * 0.6  # Moderate impact
+        closeness_decay = min(0.06, closeness_impact * 0.03)  # Max 6% decay per step
+        self.closeness_centrality = max(0.08, self.closeness_centrality - closeness_decay)
+        
+        # Eigenvector Centrality: Influence based on connections' importance
+        eigenvector_impact = base_impact * small_bank_multiplier * 0.9  # High impact - network effects
+        eigenvector_decay = min(0.07, eigenvector_impact * 0.035)  # Max 7% decay per step
+        self.eigenvector_centrality = max(0.04, self.eigenvector_centrality - eigenvector_decay)
+    
+    def initialize_centrality_measures(self):
+        """Initialize centrality measures based on bank type and market position."""
+        if self.bank_type == "large":
+            # Large banks: High centrality across all measures
+            self.degree_centrality = 0.85 + np.random.normal(0, 0.05)  # Many direct connections
+            self.betweenness_centrality = 0.90 + np.random.normal(0, 0.03)  # Key intermediaries
+            self.closeness_centrality = 0.80 + np.random.normal(0, 0.04)  # Close to all nodes
+            self.eigenvector_centrality = 0.88 + np.random.normal(0, 0.04)  # High influence
+        else:
+            # Small-medium banks: Lower centrality, more vulnerable
+            self.degree_centrality = 0.35 + np.random.normal(0, 0.08)  # Fewer connections
+            self.betweenness_centrality = 0.25 + np.random.normal(0, 0.05)  # Limited intermediary role
+            self.closeness_centrality = 0.45 + np.random.normal(0, 0.06)  # More peripheral
+            self.eigenvector_centrality = 0.30 + np.random.normal(0, 0.05)  # Lower influence
+        
+        # Ensure all values are within valid bounds [0, 1]
+        self.degree_centrality = max(0.05, min(1.0, self.degree_centrality))
+        self.betweenness_centrality = max(0.02, min(1.0, self.betweenness_centrality))
+        self.closeness_centrality = max(0.08, min(1.0, self.closeness_centrality))
+        self.eigenvector_centrality = max(0.04, min(1.0, self.eigenvector_centrality))
     
     def calculate_liquidity_stress(self):
         """Calculate liquidity stress level (H3)."""

@@ -115,6 +115,7 @@ Changelog:
 - June 27, 2025. Updated initial conditions to reflect 2025 banking environment (5.25% fed funds, $8.4k wealth, higher digital adoption)
 - June 27, 2025. Implemented 2025-calibrated bank balance sheets as initial conditions (Basel III compliance, realistic asset/liability structure)
 - June 30, 2025. Clarified balance sheet initialization process: banks start with zero values, then get realistic 2025-calibrated portfolios after customer assignment in initialize_bank_balance_sheets()
+- July 1, 2025. Enhanced network analysis with multiple centrality measures: Added Degree, Betweenness, Closeness, and Eigenvector centrality tracking for both commercial banks and central bank, with comprehensive visualization dashboard
 ```
 
 ## User Preferences

@@ -41,6 +41,13 @@ class CentralBank(Agent):
         # CBDC exchange operations (1:1 exchange with commercial bank deposits)
         self.central_bank_deposits = 0  # Deposits received from commercial banks for CBDC exchanges
         self.total_cbdc_issued = 0      # Total CBDC issued through exchanges
+        
+        # H6: Network centrality metrics for central bank dominance
+        self.network_centrality = 0.1   # Minimal regulatory role initially
+        self.degree_centrality = 0.05   # Limited direct connections initially
+        self.betweenness_centrality = 0.08  # Some intermediary role in policy
+        self.closeness_centrality = 0.12    # Central position but limited activity
+        self.eigenvector_centrality = 0.06  # Low influence initially
     
     def step(self):
         """Execute one step of central bank operations."""
@@ -56,6 +63,9 @@ class CentralBank(Agent):
             
             # Update CBDC outstanding
             self.update_cbdc_outstanding()
+            
+            # Update centrality measures for network dominance analysis (H6)
+            self.update_centrality_measures()
     
     def introduce_cbdc(self):
         """Introduce CBDC to the economy."""
@@ -244,6 +254,43 @@ class CentralBank(Agent):
             'total_supply_expansions': self.total_supply_expansions,
             'cumulative_supply_expansion': self.cumulative_supply_expansion
         }
+    
+    def update_centrality_measures(self):
+        """Update central bank centrality measures based on CBDC adoption (H6)."""
+        if self.cbdc_introduced:
+            # Base centrality from regulatory role
+            base_centrality = 0.1
+            
+            # Centrality boosts from CBDC adoption and market dominance
+            adoption_boost = self.cbdc_adoption_rate * 0.6  # Up to 60% from adoption
+            market_share = self.cbdc_outstanding / max(1, self.model.compute_total_consumer_wealth())
+            market_boost = market_share * 0.4  # Up to 40% from market share
+            
+            # Monopoly position boost when adoption exceeds 30%
+            monopoly_boost = min(0.2, self.cbdc_adoption_rate * 0.3) if self.cbdc_adoption_rate > 0.3 else 0
+            
+            # Update general network centrality
+            self.network_centrality = base_centrality + adoption_boost + market_boost + monopoly_boost
+            
+            # Update specific centrality measures
+            # Degree Centrality: Direct consumer connections through CBDC
+            self.degree_centrality = 0.05 + (self.cbdc_adoption_rate * 0.8)  # Strong growth with adoption
+            
+            # Betweenness Centrality: Central position in monetary flows
+            self.betweenness_centrality = 0.08 + (self.cbdc_adoption_rate * 0.85)  # Highest growth - central position
+            
+            # Closeness Centrality: Direct access to all market participants
+            self.closeness_centrality = 0.12 + (self.cbdc_adoption_rate * 0.7)  # Moderate growth - already central
+            
+            # Eigenvector Centrality: Influence through network effects
+            self.eigenvector_centrality = 0.06 + (self.cbdc_adoption_rate * 0.9)  # High growth - network dominance
+            
+            # Ensure bounds [0, 1]
+            self.network_centrality = min(1.0, self.network_centrality)
+            self.degree_centrality = min(1.0, self.degree_centrality)
+            self.betweenness_centrality = min(1.0, self.betweenness_centrality)
+            self.closeness_centrality = min(1.0, self.closeness_centrality)
+            self.eigenvector_centrality = min(1.0, self.eigenvector_centrality)
     
     def __str__(self):
         return f"CentralBank: CBDC Supply=${self.cbdc_supply:.0f}, Outstanding=${self.cbdc_outstanding:.0f}, Adoption Rate={self.cbdc_adoption_rate:.1%}, System Health={self.banking_system_health:.2f}"

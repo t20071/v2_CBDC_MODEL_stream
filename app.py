@@ -241,9 +241,9 @@ def display_results():
     st.header("📊 Detailed Time Series Analysis")
     
     # Create tabs for different analyses
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "CBDC Substitution", "H1: Network Centrality", "H3: Liquidity Stress", 
-        "H4: Network Connectivity", "H6: Central Bank Dominance", "Agent Flow Chart"
+        "H4: Network Connectivity", "H6: Central Bank Dominance", "Centrality Analysis", "Agent Flow Chart"
     ])
     
     with tab1:
@@ -512,6 +512,127 @@ def display_results():
             st.metric("CB Dominance Ratio", f"{dominance_ratio:.1f}x")
     
     with tab6:
+        st.subheader("Comprehensive Network Centrality Analysis")
+        st.write("Analysis of multiple centrality measures: Degree, Betweenness, Closeness, and Eigenvector centrality")
+        
+        # Create subplots for different centrality measures
+        centrality_measures = [
+            ('Degree Centrality', 'degree', 'Number of direct connections'),
+            ('Betweenness Centrality', 'betweenness', 'Intermediary position strength'),
+            ('Closeness Centrality', 'closeness', 'Proximity to all network nodes'),
+            ('Eigenvector Centrality', 'eigenvector', 'Influence based on connections importance')
+        ]
+        
+        for measure_name, measure_key, description in centrality_measures:
+            st.subheader(f"{measure_name}")
+            st.write(f"**{description}**")
+            
+            # Create comparison chart for this centrality measure
+            fig_centrality = go.Figure()
+            
+            # Add traces for different bank types and central bank
+            fig_centrality.add_trace(
+                go.Scatter(x=data.index, y=data[f'Large_Bank_{measure_name.replace(" ", "_")}'],
+                          name='Large Banks', line=dict(color='darkgreen', width=3))
+            )
+            fig_centrality.add_trace(
+                go.Scatter(x=data.index, y=data[f'Small_Bank_{measure_name.replace(" ", "_")}'],
+                          name='Small/Medium Banks', line=dict(color='red', width=3))
+            )
+            fig_centrality.add_trace(
+                go.Scatter(x=data.index, y=data[f'Central_Bank_{measure_name.replace(" ", "_")}'],
+                          name='Central Bank', line=dict(color='gold', width=4, dash='dash'))
+            )
+            fig_centrality.add_trace(
+                go.Scatter(x=data.index, y=data[f'Average_{measure_name.replace(" ", "_")}'],
+                          name='Average Commercial Banks', line=dict(color='blue', width=2))
+            )
+            
+            # Add CBDC introduction line
+            fig_centrality.add_vline(x=params['cbdc_introduction_step'], 
+                                   line_dash="dash", line_color="purple",
+                                   annotation_text="CBDC Launch")
+            
+            fig_centrality.update_layout(
+                title=f"{measure_name} Over Time",
+                xaxis_title="Simulation Step",
+                yaxis_title=f"{measure_name}",
+                height=400,
+                yaxis=dict(range=[0, 1])
+            )
+            st.plotly_chart(fig_centrality, use_container_width=True)
+            
+            # Metrics for this centrality measure
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                large_final = data[f'Large_Bank_{measure_name.replace(" ", "_")}'].iloc[-1]
+                large_initial = data[f'Large_Bank_{measure_name.replace(" ", "_")}'].iloc[0]
+                large_change = ((large_final - large_initial) / large_initial) * 100 if large_initial > 0 else 0
+                st.metric("Large Banks Change", f"{large_change:.1f}%", delta=f"{large_change:.1f}%")
+            with col2:
+                small_final = data[f'Small_Bank_{measure_name.replace(" ", "_")}'].iloc[-1]
+                small_initial = data[f'Small_Bank_{measure_name.replace(" ", "_")}'].iloc[0]
+                small_change = ((small_final - small_initial) / small_initial) * 100 if small_initial > 0 else 0
+                st.metric("Small Banks Change", f"{small_change:.1f}%", delta=f"{small_change:.1f}%")
+            with col3:
+                cb_final = data[f'Central_Bank_{measure_name.replace(" ", "_")}'].iloc[-1]
+                cb_initial = data[f'Central_Bank_{measure_name.replace(" ", "_")}'].iloc[0]
+                cb_change = ((cb_final - cb_initial) / cb_initial) * 100 if cb_initial > 0 else 0
+                st.metric("Central Bank Change", f"{cb_change:.1f}%", delta=f"{cb_change:.1f}%")
+            with col4:
+                centrality_gap = large_final - small_final
+                st.metric("Large-Small Gap", f"{centrality_gap:.3f}")
+            
+            st.markdown("---")
+        
+        # Summary comparison of all centrality measures
+        st.subheader("Centrality Measures Summary")
+        
+        # Create a comprehensive comparison chart
+        fig_summary = make_subplots(
+            rows=2, cols=2,
+            subplot_titles=('Degree Centrality', 'Betweenness Centrality', 
+                          'Closeness Centrality', 'Eigenvector Centrality'),
+            specs=[[{"secondary_y": False}, {"secondary_y": False}],
+                   [{"secondary_y": False}, {"secondary_y": False}]]
+        )
+        
+        # Add traces for each centrality measure
+        measures_data = [
+            ('Large_Bank_Degree_Centrality', 'Small_Bank_Degree_Centrality', 'Central_Bank_Degree_Centrality'),
+            ('Large_Bank_Betweenness_Centrality', 'Small_Bank_Betweenness_Centrality', 'Central_Bank_Betweenness_Centrality'),
+            ('Large_Bank_Closeness_Centrality', 'Small_Bank_Closeness_Centrality', 'Central_Bank_Closeness_Centrality'),
+            ('Large_Bank_Eigenvector_Centrality', 'Small_Bank_Eigenvector_Centrality', 'Central_Bank_Eigenvector_Centrality')
+        ]
+        
+        positions = [(1, 1), (1, 2), (2, 1), (2, 2)]
+        
+        for i, (large_col, small_col, cb_col) in enumerate(measures_data):
+            row, col = positions[i]
+            
+            fig_summary.add_trace(
+                go.Scatter(x=data.index, y=data[large_col],
+                          name='Large Banks', line=dict(color='darkgreen'),
+                          showlegend=(i == 0)),
+                row=row, col=col
+            )
+            fig_summary.add_trace(
+                go.Scatter(x=data.index, y=data[small_col],
+                          name='Small Banks', line=dict(color='red'),
+                          showlegend=(i == 0)),
+                row=row, col=col
+            )
+            fig_summary.add_trace(
+                go.Scatter(x=data.index, y=data[cb_col],
+                          name='Central Bank', line=dict(color='gold', dash='dash'),
+                          showlegend=(i == 0)),
+                row=row, col=col
+            )
+        
+        fig_summary.update_layout(height=800, title_text="All Centrality Measures Comparison")
+        st.plotly_chart(fig_summary, use_container_width=True)
+    
+    with tab7:
         st.subheader("Agent Interaction Flow Chart")
         st.markdown("""
         This interactive flow chart shows how the three types of agents interact in the CBDC banking simulation:
