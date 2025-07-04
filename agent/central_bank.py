@@ -41,6 +41,7 @@ class CentralBank(Agent):
         # CBDC exchange operations (1:1 exchange with commercial bank deposits)
         self.central_bank_deposits = 0  # Deposits received from commercial banks for CBDC exchanges
         self.total_cbdc_issued = 0      # Total CBDC issued through exchanges
+        self.cbdc_reserves = 0          # CBDC reserves held by central bank
         
         # H6: Network centrality metrics for central bank dominance
         self.network_centrality = 0.1   # Minimal regulatory role initially

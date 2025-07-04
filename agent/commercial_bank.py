@@ -69,6 +69,35 @@ class CommercialBank(Agent):
         
         self.customers = []
         
+        # Basel III Compliance Metrics (Reference: Basel Committee 2024)
+        self.tier_1_capital = initial_capital * 0.12  # 12% of initial capital as Tier 1
+        self.tier_2_capital = initial_capital * 0.03  # 3% of initial capital as Tier 2
+        self.capital_conservation_buffer = 0.025  # 2.5% conservation buffer
+        self.countercyclical_buffer = 0.0  # Variable based on economic conditions
+        
+        # Risk Management Attributes (BIS 2024, IMF 2024)
+        self.operational_capacity = 1.0  # 100% operational capacity
+        self.cyber_incident_flag = False
+        self.cyber_losses = 0.0
+        self.liquidity_stress_flag = False
+        self.stressed_liquidity_ratio = 1.0
+        self.digital_run_flag = False
+        self.previous_deposits = 0
+        
+        # Enhanced Capital Requirements (Basel III Endgame 2025)
+        self.enhanced_capital_requirement = False
+        self.capital_buffer_requirement = 0.0
+        
+        # Operational Risk Indicators (BIS 2024)
+        self.operational_risk_score = 0.05  # 5% baseline operational risk
+        self.business_continuity_score = 0.95  # 95% business continuity
+        self.third_party_risk_exposure = 0.1  # 10% third-party risk exposure
+        
+        # Liquidity Risk Management (Basel III LCR/NSFR)
+        self.liquidity_coverage_ratio = 1.2  # 120% LCR (above 100% requirement)
+        self.net_stable_funding_ratio = 1.1  # 110% NSFR (above 100% requirement)
+        self.emergency_liquidity_access = True  # Access to central bank facilities
+        
         # CBDC exchange tracking
         self.cbdc_related_outflows = 0      # Total deposits lost to CBDC exchanges
         self.reserves_transferred_to_cb = 0 # Reserves transferred to central bank for CBDC
@@ -132,6 +161,13 @@ class CommercialBank(Agent):
         
         # Calculate liquidity stress (H3)
         self.calculate_liquidity_stress()
+        
+        # Enhanced Risk Management (Basel III + Real-world complexities)
+        self.assess_operational_risks()
+        self.monitor_basel_compliance()
+        self.manage_liquidity_risks()
+        self.respond_to_cyber_threats()
+        self.update_risk_appetite()
     
     def add_customer(self, consumer):
         """Add a new customer to the bank."""
@@ -392,6 +428,173 @@ class CommercialBank(Agent):
         )
         
         return strength_score
+    
+    def assess_operational_risks(self):
+        """
+        Assess operational risks based on BIS framework.
+        
+        Reference: BIS (2024) "CBDC Information Security and Operational Risks to Central Banks"
+        """
+        # Technology risk assessment
+        tech_risk = 0.0
+        if self.cyber_incident_flag:
+            tech_risk += 0.2  # 20% increase from cyber incidents
+        
+        # Business continuity risk
+        if self.operational_capacity < 0.9:
+            tech_risk += (1 - self.operational_capacity) * 0.3
+        
+        # Update operational risk score
+        self.operational_risk_score = min(0.3, tech_risk + self.third_party_risk_exposure * 0.1)
+        
+        # Impact on business continuity
+        self.business_continuity_score = max(0.5, 1.0 - self.operational_risk_score)
+        
+    def monitor_basel_compliance(self):
+        """
+        Monitor Basel III compliance requirements.
+        
+        Reference: Basel Committee (2024) "Basel III Endgame Implementation Guidelines"
+        """
+        # Calculate risk-weighted assets
+        risk_weighted_assets = (
+            self.consumer_loans * 0.75 +  # 75% risk weight
+            self.commercial_loans * 1.0 +  # 100% risk weight
+            self.real_estate_loans * 0.35 +  # 35% risk weight
+            self.securities * 0.2 +  # 20% risk weight
+            self.cash_reserves * 0.0  # 0% risk weight
+        )
+        
+        # Calculate capital ratios
+        total_capital = self.tier_1_capital + self.tier_2_capital
+        if risk_weighted_assets > 0:
+            capital_ratio = total_capital / risk_weighted_assets
+            tier_1_ratio = self.tier_1_capital / risk_weighted_assets
+            
+            # Check capital adequacy
+            required_capital = 0.08 + self.capital_conservation_buffer + self.countercyclical_buffer
+            if self.enhanced_capital_requirement:
+                required_capital += self.capital_buffer_requirement
+                
+            if capital_ratio < required_capital:
+                # Capital shortfall - raise additional capital
+                capital_deficit = (required_capital - capital_ratio) * risk_weighted_assets
+                self.tier_1_capital += capital_deficit * 0.8  # Raise mostly Tier 1 capital
+                self.tier_2_capital += capital_deficit * 0.2
+        
+        # Update liquidity ratios
+        self.update_liquidity_ratios()
+        
+    def update_liquidity_ratios(self):
+        """Update Basel III liquidity ratios (LCR and NSFR)."""
+        # Liquidity Coverage Ratio calculation
+        liquid_assets = self.cash_reserves + self.securities * 0.85  # 85% haircut on securities
+        net_cash_outflows = self.total_deposits * 0.03  # 3% daily outflow assumption
+        
+        if net_cash_outflows > 0:
+            self.liquidity_coverage_ratio = liquid_assets / net_cash_outflows
+        
+        # Net Stable Funding Ratio calculation
+        stable_funding = self.total_deposits * 0.9 + self.borrowings * 0.5
+        required_funding = (
+            self.consumer_loans * 0.65 +
+            self.commercial_loans * 0.85 +
+            self.real_estate_loans * 0.65 +
+            self.securities * 0.15
+        )
+        
+        if required_funding > 0:
+            self.net_stable_funding_ratio = stable_funding / required_funding
+            
+    def manage_liquidity_risks(self):
+        """
+        Manage liquidity risks during CBDC transition.
+        
+        Reference: ECB (2024) "Tiered CBDC and the Financial System"
+        """
+        # Monitor deposit velocity
+        if hasattr(self, 'previous_deposits') and self.previous_deposits > 0:
+            deposit_change_rate = (self.previous_deposits - self.total_deposits) / self.previous_deposits
+            
+            if deposit_change_rate > 0.1:  # 10% deposit outflow
+                self.liquidity_stress_flag = True
+                
+                # Emergency liquidity measures
+                if self.emergency_liquidity_access:
+                    # Access central bank emergency lending
+                    emergency_funding = min(
+                        deposit_change_rate * self.total_deposits,
+                        self.cash_reserves * 0.5
+                    )
+                    self.borrowings += emergency_funding
+                    self.cash_reserves += emergency_funding
+        
+        # Proactive liquidity management
+        if self.liquidity_coverage_ratio < 1.1:  # Below 110%
+            # Increase liquid asset holdings
+            liquidity_buffer = self.total_deposits * 0.05  # 5% additional buffer
+            self.securities += liquidity_buffer * 0.6  # 60% in securities
+            self.cash_reserves += liquidity_buffer * 0.4  # 40% in cash
+            
+    def respond_to_cyber_threats(self):
+        """
+        Respond to cybersecurity incidents.
+        
+        Reference: IMF (2024) "Rising Cyber Threats Pose Serious Concerns for Financial Stability"
+        """
+        if self.cyber_incident_flag:
+            # Immediate response measures
+            self.operational_capacity *= 0.9  # 10% capacity reduction
+            
+            # Increase cybersecurity spending (operational cost)
+            cyber_investment = self.cyber_losses * 0.5  # 50% of losses in security investment
+            self.tier_1_capital -= cyber_investment
+            
+            # Customer confidence impact
+            customer_impact = min(0.1, self.cyber_losses / max(self.total_deposits, 1))
+            for customer in self.customers:
+                if hasattr(customer, 'bank_loyalty'):
+                    customer.bank_loyalty *= (1 - customer_impact)
+            
+            # Recovery planning
+            if self.operational_capacity < 0.8:
+                # Activate business continuity plan
+                self.business_continuity_score *= 0.9
+                # Gradual capacity restoration
+                self.operational_capacity = min(1.0, self.operational_capacity * 1.05)
+            
+            # Reset incident flag after response
+            self.cyber_incident_flag = False
+            
+    def update_risk_appetite(self):
+        """
+        Update risk appetite based on current conditions.
+        
+        Reference: Federal Reserve (2024) "Financial Stability Implications of CBDC"
+        """
+        # Calculate overall risk exposure
+        cbdc_risk = self.model.compute_cbdc_adoption_rate() * self.cbdc_vulnerability
+        operational_risk = self.operational_risk_score
+        liquidity_risk = max(0, 1.1 - self.liquidity_coverage_ratio)
+        
+        total_risk_exposure = cbdc_risk + operational_risk + liquidity_risk
+        
+        # Adjust risk appetite (conservative during high risk periods)
+        if total_risk_exposure > 0.4:
+            # Conservative approach
+            self.lending_rate += 0.001  # Increase lending rates
+            self.interest_rate -= 0.0005  # Reduce deposit rates slightly
+            # Reduce lending exposure
+            target_loan_reduction = min(0.05, total_risk_exposure * 0.1)
+            self.target_loan_ratio *= (1 - target_loan_reduction)
+        elif total_risk_exposure < 0.2:
+            # More aggressive approach
+            self.lending_rate = max(self.lending_rate - 0.0005, 0.03)  # Reduce lending rates
+            self.interest_rate += 0.0003  # Slightly increase deposit rates
+        
+        # Update countercyclical buffer based on systemic risk
+        if hasattr(self.model, 'systemic_risk_score'):
+            self.countercyclical_buffer = min(0.025, self.model.systemic_risk_score * 0.05)
     
     def __str__(self):
         return f"CommercialBank_{self.unique_id}: Deposits=${self.total_deposits:.0f}, Loans=${self.total_loans:.0f}, Customers={len(self.customers)}"

@@ -10,11 +10,13 @@ if TYPE_CHECKING:
     from agent.central_bank import CentralBank
     from agent.consumer import Consumer
     from agent.merchant import Merchant
+    from agent.risk_manager import RiskManager
 else:
     from agent.commercial_bank import CommercialBank
     from agent.central_bank import CentralBank
     from agent.consumer import Consumer
     from agent.merchant import Merchant
+    from agent.risk_manager import RiskManager
 
 class CBDCBankingModel(Model):
     """
@@ -177,6 +179,16 @@ class CBDCBankingModel(Model):
         
         # Initialize 2025-calibrated balance sheets for all banks
         self.initialize_bank_balance_sheets()
+        
+        # Risk management and regulatory oversight (Basel III + Real-world complexities)
+        self.risk_manager = RiskManager(999, self)  # Use high ID to avoid conflicts
+        self.all_agents.append(self.risk_manager)
+        
+        # Enhanced model attributes for real-world complexity
+        self.systemic_risk_score = 0.0
+        self.cbdc_operational_capacity = 1.0
+        self.previous_total_deposits = 0.0
+        self.cbdc_capacity_stress = False
         
         # Transaction tracking for payment method analysis
         self.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}

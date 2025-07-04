@@ -118,6 +118,7 @@ Changelog:
 - June 30, 2025. Clarified balance sheet initialization process: banks start with zero values, then get realistic 2025-calibrated portfolios after customer assignment in initialize_bank_balance_sheets()
 - July 1, 2025. Enhanced network analysis with multiple centrality measures: Added Degree, Betweenness, Closeness, and Eigenvector centrality tracking for both commercial banks and central bank, with comprehensive visualization dashboard
 - July 4, 2025. Implemented comprehensive Merchant agent system with real-world economic scenarios: Added 5 business types (retail, restaurant, online, utility, grocery), realistic payment processing costs, dynamic economic conditions tracking, and consumer-merchant transaction flows
+- July 4, 2025. Added advanced real-world complexities based on 2024-2025 academic research: Implemented Risk Manager agent with cybersecurity threat modeling, Basel III compliance monitoring, operational risk management, and stress testing scenarios based on IMF, ECB, Federal Reserve, and BIS research findings
 ```
 
 ## User Preferences
