@@ -180,6 +180,9 @@ class CBDCBankingModel(Model):
         # Initialize 2025-calibrated balance sheets for all banks
         self.initialize_bank_balance_sheets()
         
+        # Initialize central bank banknote distribution tracking
+        self.initialize_central_bank_liabilities()
+        
         # Risk management and regulatory oversight (Basel III + Real-world complexities)
         self.risk_manager = RiskManager(999, self)  # Use high ID to avoid conflicts
         self.all_agents.append(self.risk_manager)
@@ -190,9 +193,15 @@ class CBDCBankingModel(Model):
         self.previous_total_deposits = 0.0
         self.cbdc_capacity_stress = False
         
-        # Transaction tracking for payment method analysis
-        self.transaction_volumes = {"Bank": 0, "CBDC": 0, "Other": 0}
-        self.transaction_counts = {"Bank": 0, "CBDC": 0, "Other": 0}
+        # Transaction tracking for payment method analysis (include all payment types)
+        self.transaction_volumes = {
+            "Bank": 0, "CBDC": 0, "Other": 0,
+            "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+        }
+        self.transaction_counts = {
+            "Bank": 0, "CBDC": 0, "Other": 0,
+            "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+        }
         self.monthly_transactions = {}
         
         # Data collection
@@ -201,8 +210,15 @@ class CBDCBankingModel(Model):
                 "CBDC_Adoption_Rate": self.compute_cbdc_adoption_rate,
                 "Total_CBDC_Holdings": self.compute_total_cbdc_holdings,
                 "Total_Bank_Deposits": self.compute_total_bank_deposits,
+                "Total_Banknote_Holdings": self.compute_total_banknote_holdings,
                 "Total_Bank_Loans": self.compute_total_bank_loans,
                 "CBDC_Adopters": self.compute_cbdc_adopters,
+                # Conversion tracking
+                "Banknote_to_CBDC_Conversion": self.compute_banknote_to_cbdc_conversion,
+                "Deposit_to_CBDC_Conversion": self.compute_deposit_to_cbdc_conversion,
+                # Central bank liabilities
+                "Central_Bank_Banknotes_Outstanding": self.compute_central_bank_banknotes_outstanding,
+                "Central_Bank_CBDC_Outstanding": self.compute_central_bank_cbdc_outstanding,
                 "Average_Bank_Liquidity_Ratio": self.compute_average_bank_liquidity,
                 "Step": lambda m: m.current_step,
                 # H1: Network centrality metrics
@@ -358,6 +374,26 @@ class CBDCBankingModel(Model):
     def compute_total_bank_deposits(self):
         """Compute total deposits across all commercial banks."""
         return sum(bank.total_deposits for bank in self.commercial_banks)
+    
+    def compute_total_banknote_holdings(self):
+        """Compute total banknote holdings across all consumers."""
+        return sum(consumer.banknote_holdings for consumer in self.consumers)
+    
+    def compute_banknote_to_cbdc_conversion(self):
+        """Compute total banknote-to-CBDC conversion amount."""
+        return self.central_bank.banknote_to_cbdc_conversion if hasattr(self.central_bank, 'banknote_to_cbdc_conversion') else 0
+    
+    def compute_deposit_to_cbdc_conversion(self):
+        """Compute total deposit-to-CBDC conversion amount."""
+        return self.central_bank.deposit_to_cbdc_conversion if hasattr(self.central_bank, 'deposit_to_cbdc_conversion') else 0
+    
+    def compute_central_bank_banknotes_outstanding(self):
+        """Compute central bank banknotes outstanding."""
+        return self.central_bank.banknotes_outstanding if hasattr(self.central_bank, 'banknotes_outstanding') else 0
+    
+    def compute_central_bank_cbdc_outstanding(self):
+        """Compute central bank CBDC outstanding."""
+        return self.central_bank.cbdc_outstanding if hasattr(self.central_bank, 'cbdc_outstanding') else 0
     
     def compute_total_consumer_wealth(self):
         """Compute total wealth across all consumers."""
@@ -717,3 +753,22 @@ class CBDCBankingModel(Model):
         }
         
         return summary
+    
+    def initialize_central_bank_liabilities(self):
+        """Initialize central bank liability tracking for banknotes and CBDC."""
+        # Calculate total banknotes from consumer holdings
+        total_banknotes = sum(consumer.banknote_holdings for consumer in self.consumers)
+        self.central_bank.banknotes_outstanding = total_banknotes
+        
+        print(f"Model: Initialized central bank liabilities")
+        print(f"Total banknotes outstanding: ${total_banknotes:,.2f}")
+        
+        # Initialize transaction tracking to include all payment methods
+        self.transaction_volumes = {
+            "Bank": 0, "CBDC": 0, "Other": 0,
+            "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+        }
+        self.transaction_counts = {
+            "Bank": 0, "CBDC": 0, "Other": 0,
+            "BANK_TRANSFER": 0, "CBDC_DIRECT": 0, "CASH": 0
+        }

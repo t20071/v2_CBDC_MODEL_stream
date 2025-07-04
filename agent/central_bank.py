@@ -38,10 +38,18 @@ class CentralBank(Agent):
         self.total_supply_expansions = 0
         self.cumulative_supply_expansion = 0
         
+        # Central bank liabilities tracking
+        self.banknotes_outstanding = 0  # Total banknotes in circulation (central bank liability)
+        self.cbdc_outstanding = 0       # Total CBDC in circulation (central bank liability)
+        
         # CBDC exchange operations (1:1 exchange with commercial bank deposits)
         self.central_bank_deposits = 0  # Deposits received from commercial banks for CBDC exchanges
         self.total_cbdc_issued = 0      # Total CBDC issued through exchanges
         self.cbdc_reserves = 0          # CBDC reserves held by central bank
+        
+        # Conversion tracking
+        self.banknote_to_cbdc_conversion = 0  # Amount of banknotes converted to CBDC
+        self.deposit_to_cbdc_conversion = 0   # Amount of deposits converted to CBDC
         
         # H6: Network centrality metrics for central bank dominance
         self.network_centrality = 0.1   # Minimal regulatory role initially
@@ -72,6 +80,10 @@ class CentralBank(Agent):
         """Introduce CBDC to the economy."""
         self.cbdc_introduced = True
         self.cbdc_supply = 0  # Start with zero supply - will expand based on demand
+        
+        # Initialize banknote distribution tracking
+        if hasattr(self, 'model') and hasattr(self.model, 'consumers'):
+            self.initialize_banknote_distribution()
         
         # Notify all consumers about CBDC availability
         for consumer in self.model.consumers:
@@ -293,5 +305,45 @@ class CentralBank(Agent):
             self.closeness_centrality = min(1.0, self.closeness_centrality)
             self.eigenvector_centrality = min(1.0, self.eigenvector_centrality)
     
+    def initialize_banknote_distribution(self):
+        """Initialize banknote distribution tracking from consumer holdings."""
+        # Calculate total banknotes outstanding from consumer holdings
+        total_banknotes = sum(consumer.banknote_holdings for consumer in self.model.consumers)
+        self.banknotes_outstanding = total_banknotes
+        
+        print(f"Central Bank: Initialized banknote distribution")
+        print(f"Total banknotes outstanding: ${self.banknotes_outstanding:,.2f}")
+    
+    def process_cbdc_conversion(self, consumer, conversion_amount, source_type):
+        """Process conversion from banknotes or deposits to CBDC."""
+        if source_type == "banknotes":
+            # Convert banknotes to CBDC (1:1 exchange)
+            if consumer.banknote_holdings >= conversion_amount:
+                consumer.banknote_holdings -= conversion_amount
+                consumer.cbdc_holdings += conversion_amount
+                self.banknotes_outstanding -= conversion_amount
+                self.cbdc_outstanding += conversion_amount
+                self.banknote_to_cbdc_conversion += conversion_amount
+                return True
+        elif source_type == "deposits":
+            # Convert deposits to CBDC (1:1 exchange via commercial bank)
+            if consumer.bank_deposits >= conversion_amount:
+                consumer.bank_deposits -= conversion_amount
+                consumer.cbdc_holdings += conversion_amount
+                self.cbdc_outstanding += conversion_amount
+                self.deposit_to_cbdc_conversion += conversion_amount
+                return True
+        return False
+    
+    def get_liability_breakdown(self):
+        """Get breakdown of central bank liabilities."""
+        return {
+            "banknotes_outstanding": self.banknotes_outstanding,
+            "cbdc_outstanding": self.cbdc_outstanding,
+            "total_central_bank_liabilities": self.banknotes_outstanding + self.cbdc_outstanding,
+            "banknote_to_cbdc_conversion": self.banknote_to_cbdc_conversion,
+            "deposit_to_cbdc_conversion": self.deposit_to_cbdc_conversion
+        }
+
     def __str__(self):
         return f"CentralBank: CBDC Supply=${self.cbdc_supply:.0f}, Outstanding=${self.cbdc_outstanding:.0f}, Adoption Rate={self.cbdc_adoption_rate:.1%}, System Health={self.banking_system_health:.2f}"

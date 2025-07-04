@@ -29,10 +29,13 @@ class Consumer(Agent):
         self.risk_aversion = max(0.1, min(0.9, risk_aversion))  # Constrain between 0.1 and 0.9
         self.cbdc_adoption_probability = cbdc_adoption_probability
         
-        # Financial holdings - 37% of wealth in bank deposits initially
-        self.bank_deposits = initial_wealth * 0.37  # 37% in bank deposits
-        self.cbdc_holdings = 0
-        self.other_assets = initial_wealth * 0.63  # 63% in other assets (savings, investments, cash)
+        # Financial holdings - Three-tier monetary system
+        # Central bank liabilities: banknotes + CBDC
+        # Commercial bank liabilities: deposits
+        self.bank_deposits = initial_wealth * 0.30  # 30% in bank deposits (commercial bank liability)
+        self.banknote_holdings = initial_wealth * 0.12  # 12% in cash/banknotes (central bank liability)
+        self.cbdc_holdings = 0  # No CBDC initially (will be central bank liability)
+        self.other_assets = initial_wealth * 0.58  # 58% in other assets (investments, etc.)
         
         # CBDC adoption status
         self.cbdc_adopter = False
@@ -323,13 +326,13 @@ class Consumer(Agent):
                     self.bank_loyalty *= 0.8  # Moderate loyalty reduction
     
     def rebalance_portfolio(self):
-        """Rebalance portfolio between bank deposits, CBDC, and other assets."""
+        """Rebalance portfolio between bank deposits, banknotes, CBDC, and other assets."""
         if not self.cbdc_adopter:
             return
         
-        # Total liquid wealth includes bank deposits, CBDC, and moveable other assets
+        # Total liquid wealth includes all money types
         moveable_other_assets = self.other_assets * 0.5  # 50% of other assets can be moved
-        total_liquid_wealth = self.bank_deposits + self.cbdc_holdings + moveable_other_assets
+        total_liquid_wealth = self.bank_deposits + self.banknote_holdings + self.cbdc_holdings + moveable_other_assets
         if total_liquid_wealth <= 0:
             return
         
@@ -356,17 +359,28 @@ class Consumer(Agent):
             old_bank_deposits = self.bank_deposits
             
             if adjustment > 0:  # Moving more money TO CBDC
-                # Prioritize transferring from bank deposits first
-                from_bank = min(adjustment, self.bank_deposits)
-                remaining_needed = adjustment - from_bank
+                # Process conversions through central bank (proper liability tracking)
+                model = self.get_model()
                 
-                # If need more, get from other assets
+                # Strategy: Convert banknotes first (easier 1:1 exchange), then deposits
+                from_banknotes = min(adjustment, self.banknote_holdings)
+                remaining_needed = adjustment - from_banknotes
+                
+                # Convert banknotes to CBDC through central bank
+                if from_banknotes > 0:
+                    model.central_bank.process_cbdc_conversion(self, from_banknotes, "banknotes")
+                
+                # Convert deposits to CBDC through central bank
+                from_deposits = min(remaining_needed, self.bank_deposits)
+                if from_deposits > 0:
+                    model.central_bank.process_cbdc_conversion(self, from_deposits, "deposits")
+                
+                # If still need more, use other assets
+                remaining_needed = adjustment - from_banknotes - from_deposits
                 from_other = min(remaining_needed, moveable_other_assets)
-                
-                # Execute transfers
-                self.bank_deposits -= from_bank
-                self.other_assets -= from_other
-                self.cbdc_holdings += (from_bank + from_other)
+                if from_other > 0:
+                    self.other_assets -= from_other
+                    self.cbdc_holdings += from_other
                 
             else:  # Moving money FROM CBDC (rare case)
                 transfer_amount = min(abs(adjustment), self.cbdc_holdings)

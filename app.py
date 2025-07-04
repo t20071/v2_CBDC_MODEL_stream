@@ -243,10 +243,10 @@ def display_results():
     st.header("📊 Detailed Time Series Analysis")
     
     # Create tabs for different analyses
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
         "CBDC Substitution", "H1: Network Centrality", "H3: Liquidity Stress", 
         "H4: Network Connectivity", "H6: Central Bank Dominance", "Centrality Analysis", 
-        "Risk Management", "Agent Flow Chart"
+        "Risk Management", "Agent Flow Chart", "Three-Tier Money System"
     ])
     
     with tab1:
@@ -1186,6 +1186,191 @@ def display_results():
             - **Regulatory Framework**: Provides oversight and policy guidance for financial stability
             - **Network Effects**: Dynamic centrality measures and interconnectedness analysis
             - **Real-World Complexity**: Operational risks, cyber incidents, and economic scenarios
+            """)
+    
+    with tab9:
+        st.header("🏦 Three-Tier Monetary System Analysis")
+        st.markdown("""
+        **Comprehensive Money Type Analysis**: This dashboard shows the fundamental differences between the three types of money:
+        - **Banknotes** (Central Bank liability): Physical cash issued by central bank
+        - **Bank Deposits** (Commercial Bank liability): Digital money held at commercial banks
+        - **CBDC** (Central Bank liability): Digital money issued directly by central bank
+        
+        **Key Research Question**: How much of each money type converts to CBDC and what are the financial system effects?
+        """)
+        
+        # Check if three-tier data is available
+        has_banknote_data = 'Total_Banknote_Holdings' in data.columns
+        has_conversion_data = 'Banknote_to_CBDC_Conversion' in data.columns and 'Deposit_to_CBDC_Conversion' in data.columns
+        
+        if has_banknote_data:
+            # Three-tier money system overview
+            st.subheader("💰 Money Type Distribution Over Time")
+            
+            fig_money = make_subplots(
+                rows=2, cols=2,
+                subplot_titles=('Money Type Holdings', 'Central Bank Liabilities', 
+                               'Conversion Flows', 'Financial System Impact'),
+                specs=[[{"secondary_y": False}, {"secondary_y": False}],
+                       [{"secondary_y": False}, {"secondary_y": False}]]
+            )
+            
+            # Money type holdings
+            fig_money.add_trace(
+                go.Scatter(x=data.index, y=data['Total_Banknote_Holdings'],
+                          name='Banknotes (CB Liability)', line=dict(color='orange', width=3)),
+                row=1, col=1
+            )
+            fig_money.add_trace(
+                go.Scatter(x=data.index, y=data['Total_Bank_Deposits'],
+                          name='Bank Deposits (Bank Liability)', line=dict(color='blue', width=3)),
+                row=1, col=1
+            )
+            fig_money.add_trace(
+                go.Scatter(x=data.index, y=data['Total_CBDC_Holdings'],
+                          name='CBDC (CB Liability)', line=dict(color='green', width=3)),
+                row=1, col=1
+            )
+            
+            # Central bank liabilities
+            if has_conversion_data:
+                fig_money.add_trace(
+                    go.Scatter(x=data.index, y=data['Central_Bank_Banknotes_Outstanding'],
+                              name='CB Banknotes Outstanding', line=dict(color='orange', dash='dash')),
+                    row=1, col=2
+                )
+                fig_money.add_trace(
+                    go.Scatter(x=data.index, y=data['Central_Bank_CBDC_Outstanding'],
+                              name='CB CBDC Outstanding', line=dict(color='green', dash='dash')),
+                    row=1, col=2
+                )
+                
+                # Conversion flows
+                fig_money.add_trace(
+                    go.Scatter(x=data.index, y=data['Banknote_to_CBDC_Conversion'],
+                              name='Banknotes → CBDC', line=dict(color='purple', width=2)),
+                    row=2, col=1
+                )
+                fig_money.add_trace(
+                    go.Scatter(x=data.index, y=data['Deposit_to_CBDC_Conversion'],
+                              name='Deposits → CBDC', line=dict(color='red', width=2)),
+                    row=2, col=1
+                )
+            
+            # Financial system impact
+            data['Total_Money_Supply'] = data['Total_Banknote_Holdings'] + data['Total_Bank_Deposits'] + data['Total_CBDC_Holdings']
+            fig_money.add_trace(
+                go.Scatter(x=data.index, y=data['Total_Money_Supply'],
+                          name='Total Money Supply', line=dict(color='black', width=2)),
+                row=2, col=2
+            )
+            fig_money.add_trace(
+                go.Scatter(x=data.index, y=data['Average_Bank_Liquidity_Ratio'],
+                          name='Banking System Liquidity', line=dict(color='cyan', width=2)),
+                row=2, col=2
+            )
+            
+            fig_money.update_layout(height=800, title_text="Three-Tier Monetary System Analysis")
+            st.plotly_chart(fig_money, use_container_width=True)
+            
+            # Key metrics summary
+            st.subheader("📊 Liability Structure Analysis")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                initial_banknotes = data['Total_Banknote_Holdings'].iloc[0]
+                final_banknotes = data['Total_Banknote_Holdings'].iloc[-1]
+                banknote_change = final_banknotes - initial_banknotes
+                st.metric("Banknote Change", f"${banknote_change:,.0f}", 
+                         delta=f"{((final_banknotes/initial_banknotes - 1) * 100):.1f}%" if initial_banknotes > 0 else "N/A")
+            
+            with col2:
+                initial_deposits = data['Total_Bank_Deposits'].iloc[0]
+                final_deposits = data['Total_Bank_Deposits'].iloc[-1]
+                deposit_change = final_deposits - initial_deposits
+                st.metric("Deposit Change", f"${deposit_change:,.0f}",
+                         delta=f"{((final_deposits/initial_deposits - 1) * 100):.1f}%" if initial_deposits > 0 else "N/A")
+            
+            with col3:
+                final_cbdc = data['Total_CBDC_Holdings'].iloc[-1]
+                st.metric("Final CBDC Holdings", f"${final_cbdc:,.0f}")
+            
+            with col4:
+                if has_conversion_data:
+                    total_conversions = data['Banknote_to_CBDC_Conversion'].iloc[-1] + data['Deposit_to_CBDC_Conversion'].iloc[-1]
+                    st.metric("Total Conversions", f"${total_conversions:,.0f}")
+                else:
+                    st.metric("Total Conversions", "Data N/A")
+            
+            # Conversion analysis
+            if has_conversion_data:
+                st.subheader("🔄 Conversion Flow Analysis")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Conversion pie chart
+                    final_banknote_conv = data['Banknote_to_CBDC_Conversion'].iloc[-1]
+                    final_deposit_conv = data['Deposit_to_CBDC_Conversion'].iloc[-1]
+                    
+                    if final_banknote_conv > 0 or final_deposit_conv > 0:
+                        conversion_df = pd.DataFrame({
+                            'Source': ['Banknotes', 'Deposits'],
+                            'Amount': [final_banknote_conv, final_deposit_conv]
+                        })
+                        
+                        fig_conv = px.pie(conversion_df, values='Amount', names='Source',
+                                         title='CBDC Conversion Sources',
+                                         color_discrete_map={'Banknotes': 'orange', 'Deposits': 'blue'})
+                        st.plotly_chart(fig_conv, use_container_width=True)
+                
+                with col2:
+                    # Central bank liability evolution
+                    cb_liability_df = pd.DataFrame({
+                        'Step': data.index,
+                        'Banknotes Outstanding': data['Central_Bank_Banknotes_Outstanding'],
+                        'CBDC Outstanding': data['Central_Bank_CBDC_Outstanding']
+                    })
+                    
+                    fig_cb = px.area(cb_liability_df, x='Step', 
+                                   y=['Banknotes Outstanding', 'CBDC Outstanding'],
+                                   title='Central Bank Liability Composition')
+                    st.plotly_chart(fig_cb, use_container_width=True)
+            
+            # System impact assessment
+            st.subheader("⚖️ Financial System Impact")
+            
+            impact_metrics = []
+            
+            # Banking disintermediation
+            disintermediation = ((initial_deposits - final_deposits) / initial_deposits * 100) if initial_deposits > 0 else 0
+            impact_metrics.append(("Banking Disintermediation", f"{disintermediation:.1f}%", "🔴" if disintermediation > 50 else "🟡" if disintermediation > 25 else "🟢"))
+            
+            # Central bank dominance
+            cb_dominance = (final_cbdc / (final_cbdc + final_deposits + final_banknotes) * 100) if (final_cbdc + final_deposits + final_banknotes) > 0 else 0
+            impact_metrics.append(("CBDC Market Share", f"{cb_dominance:.1f}%", "🔴" if cb_dominance > 70 else "🟡" if cb_dominance > 40 else "🟢"))
+            
+            # Monetary conservation
+            initial_money = initial_banknotes + initial_deposits
+            final_money = final_banknotes + final_deposits + final_cbdc
+            money_conservation = abs(final_money - initial_money) / initial_money * 100 if initial_money > 0 else 0
+            impact_metrics.append(("Money Conservation Error", f"{money_conservation:.1f}%", "🟢" if money_conservation < 5 else "🟡" if money_conservation < 15 else "🔴"))
+            
+            # Display metrics
+            for i, (metric, value, status) in enumerate(impact_metrics):
+                if i % 3 == 0:
+                    cols = st.columns(3)
+                cols[i % 3].metric(metric, value, delta=status)
+        
+        else:
+            st.info("Three-tier monetary system data is not available. Please run a simulation with the enhanced three-tier system to see this analysis.")
+            st.markdown("""
+            **To enable three-tier analysis:**
+            1. The simulation tracks banknotes, deposits, and CBDC separately
+            2. Central bank liability structure is monitored
+            3. Conversion flows between money types are recorded
+            4. Financial system impact is measured in real-time
             """)
     
     # Data Export Section
