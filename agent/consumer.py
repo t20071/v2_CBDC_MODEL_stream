@@ -1,5 +1,6 @@
 from mesa import Agent
 import numpy as np
+import random
 from typing import Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
@@ -328,51 +329,99 @@ class Consumer(Agent):
         return 0.0
     
     def execute_daily_transactions(self, total_spending):
-        """Execute daily consumer-to-consumer transactions using preferred payment methods."""
+        """Execute daily transactions with merchants using preferred payment methods."""
         if total_spending <= 0:
             return
         
-        # Get model reference for transaction tracking
+        # Get model reference for transaction tracking and merchant access
         model = self.get_model()
         
-        # Determine payment method based on CBDC adoption and holdings
-        if self.cbdc_adopter and self.cbdc_holdings > 0:
-            # CBDC adopters prefer CBDC for transactions when available
-            cbdc_preference = self.get_cbdc_preference()
+        # Real-world transaction scenarios with merchants
+        if hasattr(model, 'merchants') and model.merchants:
+            # Select merchants for transactions (simulate daily shopping patterns)
+            daily_transaction_count = max(1, int(np.random.poisson(3)))  # Average 3 transactions per day
             
-            # Split spending between CBDC and bank transfers
-            cbdc_spending = min(total_spending * cbdc_preference, self.cbdc_holdings)
-            bank_spending = total_spending - cbdc_spending
-            
-            # Execute CBDC transactions
-            if cbdc_spending > 0:
-                self.cbdc_holdings -= cbdc_spending
-                self.record_transaction(cbdc_spending, "CBDC", model)
-            
-            # Execute bank transactions for remaining amount
-            if bank_spending > 0:
-                bank_payment = min(bank_spending, self.bank_deposits)
-                other_payment = bank_spending - bank_payment
+            remaining_spending = total_spending
+            for _ in range(daily_transaction_count):
+                if remaining_spending <= 1:
+                    break
                 
-                self.bank_deposits -= bank_payment
-                self.other_assets -= other_payment  # Use savings if needed
+                # Select random merchant for transaction
+                merchant = random.choice(model.merchants)
                 
-                if bank_payment > 0:
-                    self.record_transaction(bank_payment, "Bank", model)
-                if other_payment > 0:
-                    self.record_transaction(other_payment, "Other", model)
-        else:
-            # Non-adopters use traditional banking for all transactions
-            bank_payment = min(total_spending, self.bank_deposits)
-            other_payment = total_spending - bank_payment
-            
-            self.bank_deposits -= bank_payment
-            self.other_assets -= other_payment
-            
-            if bank_payment > 0:
-                self.record_transaction(bank_payment, "Bank", model)
-            if other_payment > 0:
-                self.record_transaction(other_payment, "Other", model)
+                # Transaction size based on merchant type and consumer spending pattern
+                if merchant.business_type == "grocery":
+                    transaction_size = min(remaining_spending, np.random.normal(65, 25))
+                elif merchant.business_type == "restaurant":
+                    transaction_size = min(remaining_spending, np.random.normal(35, 15))
+                elif merchant.business_type == "retail":
+                    transaction_size = min(remaining_spending, np.random.normal(85, 40))
+                elif merchant.business_type == "utility":
+                    transaction_size = min(remaining_spending, np.random.normal(150, 30))
+                elif merchant.business_type == "online":
+                    transaction_size = min(remaining_spending, np.random.normal(120, 60))
+                else:
+                    transaction_size = min(remaining_spending, np.random.normal(50, 25))
+                
+                transaction_size = max(1, transaction_size)
+                
+                # Determine payment method based on CBDC adoption, merchant acceptance, and transaction size
+                payment_method = self.select_payment_method_for_merchant(transaction_size, merchant)
+                
+                # Execute transaction based on payment method
+                if payment_method == "CBDC" and self.cbdc_holdings >= transaction_size:
+                    self.cbdc_holdings -= transaction_size
+                    self.record_transaction(transaction_size, "CBDC", model)
+                elif payment_method == "bank_transfer" and self.bank_deposits >= transaction_size:
+                    self.bank_deposits -= transaction_size
+                    self.record_transaction(transaction_size, "Bank", model)
+                elif payment_method in ["cash", "card"]:
+                    # For cash/card, deduct from bank deposits (simplified)
+                    if self.bank_deposits >= transaction_size:
+                        self.bank_deposits -= transaction_size
+                        self.record_transaction(transaction_size, "Other", model)
+                    elif self.other_assets >= transaction_size:
+                        # Use other assets if bank deposits insufficient
+                        self.other_assets -= transaction_size
+                        self.record_transaction(transaction_size, "Other", model)
+                
+                remaining_spending -= transaction_size
+    
+    def select_payment_method_for_merchant(self, transaction_size, merchant):
+        """Select payment method for transaction with specific merchant."""
+        # Base preferences: consumer's CBDC adoption and holdings
+        payment_options = {}
+        
+        # CBDC option (if adopted and merchant accepts)
+        if self.cbdc_adopter and self.cbdc_holdings >= transaction_size:
+            # Check if merchant accepts CBDC
+            if hasattr(merchant, 'payment_preferences') and merchant.payment_preferences.get("cbdc", 0) > 0:
+                payment_options["CBDC"] = merchant.payment_preferences["cbdc"] * self.get_cbdc_preference()
+        
+        # Bank transfer option
+        if self.bank_deposits >= transaction_size:
+            bank_score = merchant.payment_preferences.get("bank_transfer", 0.3)
+            # Large transactions favor bank transfers
+            if transaction_size > 100:
+                bank_score *= 1.5
+            payment_options["bank_transfer"] = bank_score
+        
+        # Cash option (prefer for small transactions if available)
+        if transaction_size < 50 and self.bank_deposits >= transaction_size:
+            cash_score = merchant.payment_preferences.get("cash", 0.6)
+            payment_options["cash"] = cash_score * 1.2  # Boost cash for small amounts
+        
+        # Card option (general fallback)
+        if self.bank_deposits >= transaction_size:
+            card_score = merchant.payment_preferences.get("card", 0.8)
+            payment_options["card"] = card_score
+        
+        # Select payment method with highest score
+        if payment_options:
+            return max(payment_options.items(), key=lambda x: x[1])[0]
+        
+        # Fallback to bank transfer if no specific preferences
+        return "bank_transfer"
     
     def record_transaction(self, amount, payment_method, model):
         """Record transaction for analysis and tracking."""

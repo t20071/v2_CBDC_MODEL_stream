@@ -9,10 +9,12 @@ if TYPE_CHECKING:
     from agent.commercial_bank import CommercialBank
     from agent.central_bank import CentralBank
     from agent.consumer import Consumer
+    from agent.merchant import Merchant
 else:
     from agent.commercial_bank import CommercialBank
     from agent.central_bank import CentralBank
     from agent.consumer import Consumer
+    from agent.merchant import Merchant
 
 class CBDCBankingModel(Model):
     """
@@ -27,6 +29,7 @@ class CBDCBankingModel(Model):
     # Type annotations for model attributes
     consumers: List['Consumer']
     commercial_banks: List['CommercialBank']
+    merchants: List['Merchant']
     central_bank: 'CentralBank'
     large_banks: List['CommercialBank']
     small_medium_banks: List['CommercialBank']
@@ -36,7 +39,7 @@ class CBDCBankingModel(Model):
     current_step: int
     cbdc_introduction_step: int
     
-    def __init__(self, n_consumers=200, n_commercial_banks=8, 
+    def __init__(self, n_consumers=200, n_commercial_banks=8, n_merchants=25,
                  cbdc_introduction_step=30, cbdc_adoption_rate=0.08,
                  cbdc_attractiveness=2.2, initial_consumer_wealth=8400,
                  bank_interest_rate=0.048, cbdc_interest_rate=0.045):
@@ -46,6 +49,7 @@ class CBDCBankingModel(Model):
         # Model parameters
         self.n_consumers = n_consumers
         self.n_commercial_banks = n_commercial_banks
+        self.n_merchants = n_merchants
         self.cbdc_introduction_step = cbdc_introduction_step
         self.cbdc_adoption_rate = cbdc_adoption_rate
         self.cbdc_attractiveness = cbdc_attractiveness
@@ -56,6 +60,10 @@ class CBDCBankingModel(Model):
         # Model state variables
         self.cbdc_introduced = False
         self.current_step = 0
+        
+        # Real-world economic scenarios
+        self.economic_conditions = 1.0  # Economic multiplier (1.0 = neutral, <1.0 = recession, >1.0 = growth)
+        self.merchant_transactions = {}  # Track merchant payment method usage
         
         # Create network topology
         self.G = nx.erdos_renyi_graph(n_consumers + n_commercial_banks + 1, 0.1)
@@ -128,6 +136,41 @@ class CBDCBankingModel(Model):
             chosen_bank = random.choice(self.commercial_banks)
             consumer.primary_bank = chosen_bank
             chosen_bank.add_customer(consumer)
+        
+        # Create Merchants for real-world economic scenarios
+        self.merchants = []
+        business_types = ["retail", "restaurant", "online", "utility", "grocery"]
+        business_sizes = ["small", "medium", "large"]
+        
+        for i in range(n_commercial_banks + n_consumers + 1, n_commercial_banks + n_consumers + n_merchants + 1):
+            # Realistic distribution of merchant types
+            business_type = random.choice(business_types)
+            
+            # Size distribution: 60% small, 30% medium, 10% large
+            size_choice = random.random()
+            if size_choice < 0.6:
+                business_size = "small"
+                initial_revenue = random.randint(2000, 8000)
+            elif size_choice < 0.9:
+                business_size = "medium"
+                initial_revenue = random.randint(8000, 25000)
+            else:
+                business_size = "large"
+                initial_revenue = random.randint(25000, 100000)
+            
+            # Assign merchants to banks for business banking
+            payment_processing_bank = random.choice(self.commercial_banks)
+            
+            merchant = Merchant(
+                unique_id=i,
+                model=self,
+                business_type=business_type,
+                size=business_size,
+                initial_revenue=initial_revenue,
+                payment_processing_bank=payment_processing_bank
+            )
+            self.all_agents.append(merchant)
+            self.merchants.append(merchant)
         
         # Initialize interbank network connections (H4)
         self.initialize_banking_network()
@@ -225,6 +268,9 @@ class CBDCBankingModel(Model):
         # Market dynamics: banks adjust interest rates based on deposit outflows
         self.adjust_market_conditions()
         
+        # Update economic conditions based on CBDC adoption and market dynamics
+        self.update_economic_conditions()
+        
         # Collect data
         self.datacollector.collect(self)
     
@@ -244,6 +290,38 @@ class CBDCBankingModel(Model):
                 
                 # Adjust lending rates accordingly
                 bank.lending_rate = bank.interest_rate + 0.03  # Maintain 3% spread
+    
+    def update_economic_conditions(self):
+        """Update economic conditions based on CBDC adoption and market dynamics."""
+        # Real-world economic scenarios based on CBDC adoption and market conditions
+        
+        # Base economic conditions (neutral = 1.0)
+        base_conditions = 1.0
+        
+        # CBDC adoption can improve economic efficiency
+        if self.cbdc_introduced:
+            cbdc_adoption = self.compute_cbdc_adoption_rate()
+            efficiency_gain = cbdc_adoption * 0.02  # Up to 2% improvement
+            base_conditions += efficiency_gain
+        
+        # Banking sector stress can negatively impact economy
+        avg_bank_liquidity = self.compute_average_bank_liquidity()
+        if avg_bank_liquidity < 0.1:  # Low liquidity stress
+            economic_stress = (0.1 - avg_bank_liquidity) * 0.5  # Up to 5% negative impact
+            base_conditions -= economic_stress
+        
+        # Merchant business health affects economy
+        if hasattr(self, 'merchants') and self.merchants:
+            merchant_health = sum(m.monthly_revenue / m.initial_revenue for m in self.merchants) / len(self.merchants)
+            merchant_effect = (merchant_health - 1.0) * 0.1  # Merchant performance impact
+            base_conditions += merchant_effect
+        
+        # Add some economic volatility (realistic fluctuations)
+        volatility = np.random.normal(0, 0.005)  # 0.5% standard deviation
+        base_conditions += volatility
+        
+        # Keep economic conditions within reasonable bounds
+        self.economic_conditions = max(0.8, min(1.2, base_conditions))
     
     # Data collection methods
     def compute_cbdc_adoption_rate(self):

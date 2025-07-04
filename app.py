@@ -23,6 +23,7 @@ def main():
     # Model parameters
     n_consumers = st.sidebar.slider("Number of Consumers", 50, 500, 200, 25)
     n_commercial_banks = st.sidebar.slider("Number of Commercial Banks", 3, 15, 8, 1)
+    n_merchants = st.sidebar.slider("Number of Merchants", 10, 50, 25, 5)
     steps = st.sidebar.slider("Simulation Steps", 50, 500, 200, 25)
     
     # CBDC parameters
@@ -42,6 +43,7 @@ def main():
             model = CBDCBankingModel(
                 n_consumers=n_consumers,
                 n_commercial_banks=n_commercial_banks,
+                n_merchants=n_merchants,
                 cbdc_introduction_step=cbdc_introduction_step,
                 cbdc_adoption_rate=cbdc_adoption_rate,
                 cbdc_attractiveness=cbdc_attractiveness,
