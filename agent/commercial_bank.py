@@ -12,7 +12,7 @@ class CommercialBank(Agent):
     def __init__(self, unique_id, model, interest_rate=0.02, lending_rate=0.05, 
                  initial_capital=50000, reserve_requirement=0.1, bank_type="small_medium", 
                  network_centrality=0.3):
-        super().__init__(model)
+        super().__init__(unique_id,model)
         
         # Store agent properties
         self.unique_id = unique_id

@@ -10,7 +10,7 @@ class CentralBank(Agent):
     """
     
     def __init__(self, unique_id, model, cbdc_interest_rate=0.045, initial_cbdc_supply=0):
-        super().__init__(model)
+        super().__init__(unique_id,model)
         
         # Store agent properties
         self.unique_id = unique_id
@@ -24,10 +24,7 @@ class CentralBank(Agent):
         # Policy tools
         self.monetary_policy_rate = 0.02  # Base interest rate
         self.cbdc_attractiveness = 1.0    # Factor affecting CBDC adoption
-        
-        # Central bank objectives
-        self.financial_stability_target = 0.8  # Target stability index
-        self.inflation_target = 0.02          # 2% inflation target
+    
         
         # Monitoring metrics
         self.banking_system_health = 1.0

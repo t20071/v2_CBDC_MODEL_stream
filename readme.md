@@ -68,7 +68,7 @@ The application follows a Model-View architecture pattern:
 
 ## Deployment Strategy
 
-### Replit Configuration
+###  Configuration
 - **Runtime**: Python 3.11 with Nix package manager
 - **Deployment Target**: Autoscale deployment for web serving
 - **Port Configuration**: Streamlit server on port 5000
@@ -80,7 +80,7 @@ The application follows a Model-View architecture pattern:
 - **Dependencies**: Automatic installation of Mesa and Plotly via UV package manager
 
 ### Configuration Files
-- `.replit`: Main Replit configuration with deployment and workflow settings
+- `.: Main configuration with deployment and workflow settings
 - `.streamlit/config.toml`: Streamlit server configuration for headless operation
 - `pyproject.toml`: Python package configuration with dependency specifications
 

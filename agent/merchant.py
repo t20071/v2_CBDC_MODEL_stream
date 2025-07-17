@@ -12,7 +12,7 @@ class Merchant(Agent):
     
     def __init__(self, unique_id, model, business_type="retail", size="small", 
                  initial_revenue=5000, payment_processing_bank=None):
-        super().__init__(model)
+        super().__init__(unique_id,model)
         
         # Store agent properties
         self.unique_id = unique_id
