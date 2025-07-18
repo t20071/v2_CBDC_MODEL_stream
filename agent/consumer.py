@@ -18,7 +18,7 @@ class Consumer(Agent):
     
     def __init__(self, unique_id, model, initial_wealth=8400, 
                  cbdc_adoption_probability=0.08, risk_aversion=0.55):
-        super().__init__(unique_id,model)
+        super().__init__(model)
         
         # Store agent properties
         self.unique_id = unique_id
