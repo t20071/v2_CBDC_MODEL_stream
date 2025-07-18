@@ -1,7 +1,7 @@
 [server]
-headless = false
-address = "localhost"
-port = 8501
+headless = true
+port = $PORT
+enableCORS = false
 
 [browser]
 gatherUsageStats = false
